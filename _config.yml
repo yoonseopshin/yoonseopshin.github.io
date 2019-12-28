@@ -19,8 +19,8 @@ locale                   : "en-US"
 title                    : Ssuby's Corgasm
 title_separator          : "-"
 name                     : "Yoonseop Shin"
-description              : "회사에서는 월급 받고 집에서는 취미로 코딩하는 개발자의 블로그"
-url                      : "코딩 및 개발 블로그"
+description              : "코딩 및 개발 정리 블로그"
+url                      : "https://sys09270883.github.io"
 baseurl                  : # 서브 경로가 있는 경우 기재
 repository               : # GitHub username/repo-name e.g. "mmistakes/minimal-mistakes"
 teaser                   : # "/assets/images/bio-photo-keyboard.jpg"
