@@ -1,6 +1,5 @@
 ---
 title: "[BOJ] INU 송년 코드페스티벌 2019 Open Contest"
-comments: true
 categories: [PS]
 tags: [BOJ, 백준, INU, 인천대, 18228, 18229, 18230, 18231, 18232, 18234, 18235]
 ---
@@ -293,3 +292,8 @@ public class Main {
 
 class FastIO { ... }    // 생략
 ```
+
+<br>
+<br>
+
+# [18231번: 파괴된 도시](https://www.acmicpc.net/problem/18231)
