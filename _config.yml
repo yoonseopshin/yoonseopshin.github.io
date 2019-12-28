@@ -16,14 +16,14 @@ minimal_mistakes_skin    : "default" # "air", "aqua", "contrast", "dark", "dirt"
 
 # Site Settings
 locale                   : "en-US"
-title                    : "GitHub Pages 따라하기- devinlife.github.io"
+title                    : Ssuby's Corgasm
 title_separator          : "-"
-name                     : "취미코딩하는 개발자"
+name                     : "Yoonseop Shin"
 description              : "회사에서는 월급 받고 집에서는 취미로 코딩하는 개발자의 블로그"
-url                      : "https://devinlife.github.io"
+url                      : "코딩 및 개발 블로그"
 baseurl                  : # 서브 경로가 있는 경우 기재
 repository               : # GitHub username/repo-name e.g. "mmistakes/minimal-mistakes"
-teaser                   : "/assets/images/bio-photo-keyboard.jpg"
+teaser                   : # "/assets/images/bio-photo-keyboard.jpg"
 logo                     : # 최상단 메뉴 바에 사이트 로고 넣기
 masthead_title           : # overrides the website title displayed in the masthead, use " " for no title
 # breadcrumbs            : false # true, false (default)
@@ -88,7 +88,7 @@ facebook:
   username               :
   app_id                 :
   publisher              :
-og_image                 : "/assets/images/bio-photo-keyboard.jpg"
+og_image                 : # "/assets/images/bio-photo-keyboard.jpg"
 # For specifying social profiles
 # - https://developers.google.com/structured-data/customize/social-profiles
 social:
@@ -105,51 +105,51 @@ analytics:
 
 # Site Author
 author:
-  name             : "취미코딩하는 개발자"
-  avatar           : "/assets/images/bio-photo-keyboard.jpg"
-  bio              : "회사에서는 월급 받고 집에서는 취미로 코딩하는 개발자"
-  location         : "South Korea"
+  name             : "Yoonseop Shin"
+  avatar           : # "/assets/images/bio-photo-keyboard.jpg"
+  bio              : "코딩 및 개발 기록용 블로그입니다."
+  location         : "Seoul, Korea"
   email            :
   links:
     - label: "Email"
       icon: "fas fa-fw fa-envelope-square"
-      url: mailto:devinlifeidea@gmail.com
-    - label: "Website"
-      icon: "fas fa-fw fa-link"
-      url: "https://devinlife.com"
-    - label: "Twitter"
-      icon: "fab fa-fw fa-twitter-square"
+      url: mailto:sys09270883@gmail.com
+    # - label: "Website"
+      # icon: "fas fa-fw fa-link"
+      # url: "https://devinlife.com"
+    # - label: "Twitter"
+      # icon: "fab fa-fw fa-twitter-square"
       # url: "https://twitter.com/"
-    - label: "Facebook"
-      icon: "fab fa-fw fa-facebook-square"
+    # - label: "Facebook"
+      # icon: "fab fa-fw fa-facebook-square"
       # url: "https://facebook.com/"
     - label: "GitHub"
       icon: "fab fa-fw fa-github"
-      url: "https://github.com/devinlife"
-    - label: "Instagram"
-      icon: "fab fa-fw fa-instagram"
+      url: "https://github.com/sys09270883"
+    # - label: "Instagram"
+      # icon: "fab fa-fw fa-instagram"
       # url: "https://instagram.com/"
 
 # Site Footer
 footer:
   links:
-    - label: "Twitter"
-      icon: "fab fa-fw fa-twitter-square"
+    # - label: "Twitter"
+      # icon: "fab fa-fw fa-twitter-square"
       # url:
-    - label: "Facebook"
-      icon: "fab fa-fw fa-facebook-square"
+    # - label: "Facebook"
+      # icon: "fab fa-fw fa-facebook-square"
       # url:
     - label: "GitHub"
       icon: "fab fa-fw fa-github"
-      url: "https://github.com/devinlife"
-    - label: "GitLab"
-      icon: "fab fa-fw fa-gitlab"
+      url: "https://github.com/sys09270883"
+    # - label: "GitLab"
+      # icon: "fab fa-fw fa-gitlab"
       # url:
-    - label: "Bitbucket"
-      icon: "fab fa-fw fa-bitbucket"
+    # - label: "Bitbucket"
+      # icon: "fab fa-fw fa-bitbucket"
       # url:
-    - label: "Instagram"
-      icon: "fab fa-fw fa-instagram"
+    # - label: "Instagram"
+      # icon: "fab fa-fw fa-instagram"
       # url:
 
 
