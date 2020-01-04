@@ -23,8 +23,8 @@ description              : "코딩 및 개발 정리 블로그"
 url                      : "https://sys09270883.github.io"
 baseurl                  : # 서브 경로가 있는 경우 기재
 repository               : # GitHub username/repo-name e.g. "mmistakes/minimal-mistakes"
-teaser                   : # "/assets/images/bio-photo-keyboard.jpg"
-logo                     : # 최상단 메뉴 바에 사이트 로고 넣기
+teaser                   : "/assets/images/bio-photo-keyboard.jpg"
+logo                     : "/assets/images/teaser-image.jpg"
 masthead_title           : # overrides the website title displayed in the masthead, use " " for no title
 # breadcrumbs            : false # true, false (default)
 words_per_minute         : 200
