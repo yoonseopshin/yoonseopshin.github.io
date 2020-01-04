@@ -68,4 +68,4 @@ localhost:8000에 접속하여 다음과 같은 화면이 뜨면 성공적으로 서버가 실행된 것이�
 
 ![]({{ site.url }}{{ site.baseurl }}/assets/images/[Django.1-10].png ){: .align-center}
 
-서버는 Ctrl + C로 끌 수 있다.
+서버는 Ctrl + C로 끌 수 있다. 
