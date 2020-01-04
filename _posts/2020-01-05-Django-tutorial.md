@@ -6,6 +6,7 @@ toc_sticky: true
 categories: [Web]
 tags: [Web, Django, Python, Pycharm, Pycharm Community Edition]
 ---
+
 Pycharm Community Edition으로 Django 프로젝트를 시작해 보자.
 
 ## 1. Pycharm에서 새 프로젝트를 생성
@@ -68,4 +69,4 @@ localhost:8000에 접속하여 다음과 같은 화면이 뜨면 성공적으로 서버가 실행된 것이�
 
 ![]({{ site.url }}{{ site.baseurl }}/assets/images/[Django.1-10].png ){: .align-center}
 
-서버는 Ctrl + C로 끌 수 있다. 
+서버는 Ctrl + C로 끌 수 있다. /
