@@ -24,7 +24,7 @@ url                      : "https://sys09270883.github.io"
 baseurl                  : # 서브 경로가 있는 경우 기재
 repository               : # GitHub username/repo-name e.g. "mmistakes/minimal-mistakes"
 teaser                   : "/assets/images/bio-photo-keyboard.jpg"
-logo                     : "/assets/images/logo-image.jpg"
+logo                     : "/assets/images/logo-image.png"
 masthead_title           : # overrides the website title displayed in the masthead, use " " for no title
 # breadcrumbs            : false # true, false (default)
 words_per_minute         : 200
