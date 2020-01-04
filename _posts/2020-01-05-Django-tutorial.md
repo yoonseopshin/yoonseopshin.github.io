@@ -3,7 +3,7 @@ title: "[Django] Pycharm에서 Django 프로젝트 생성하기"
 excerpt: "Pycharm Community Edition으로 Django 프레임워크 프로젝트 생성"
 toc: true
 toc_sticky: true
-categories: [PS]
+categories: [Web]
 tags: [Web, Django, Python, Pycharm, Pycharm Community Edition]
 ---
 
