@@ -7,10 +7,9 @@ categories: [Web]
 tags: [Web, Django, Python, Pycharm, Pycharm Community Edition]
 ---
 
-Pycharm Community Edition으로 Django 프로젝트를 시작해 보자.
-
 ## Pycharm에서 새 프로젝트를 생성
-새 프로젝트를 만든다.
+Pycharm Community Edition으로 Django 프로젝트를 시작해 보자.<br>
+우선 Pycharm에서 새 프로젝트를 만든다.
 
 ![]({{ site.url }}/assets/images/[Django]1-1.png ){: .align-center}
 
