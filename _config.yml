@@ -64,9 +64,9 @@ reCaptcha:
   secret                 :
 atom_feed:
   path                   : # blank (default) uses feed.xml
-search                   : # true, false (default)
-search_full_content      : # true, false (default)
-search_provider          : # lunr (default), algolia, google
+search                   : true
+search_full_content      : true
+search_provider          : lunr
 algolia:
   application_id         : # YOUR_APPLICATION_ID
   index_name             : # YOUR_INDEX_NAME
@@ -98,9 +98,9 @@ social:
 
 # Analytics
 analytics:
-  provider               : # "google-gtag" # 구글 어날리틱스 등록 false (default), "google", "google-universal", "custom"
+  provider               : "google-gtag" # 구글 어날리틱스 등록 false (default), "google", "google-universal", "custom"
   google:
-    tracking_id          : # "UA-134677596-2"
+    tracking_id          : "UA-134677596-2"
     anonymize_ip         : # true, false (default)
 
 # Site Author
