@@ -2,5 +2,5 @@
 main:
   - title: "Category"
     url: /categories/
-  - title: "Tags"
+  - title: "Tag"
     url: /tags/
