@@ -107,7 +107,7 @@ analytics:
 # Site Author
 author:
   name             : "Yoonseop Shin"
-  avatar           : "/assets/images/bio-photo-keyboard.jpg"
+  avatar           : "/assets/images/main-keyboard.jpg"
   bio              : "코딩 및 개발 기록용 블로그입니다."
   location         : "Seoul, Korea"
   email            :
