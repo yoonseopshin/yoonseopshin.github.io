@@ -42,10 +42,6 @@ layout: default
                 {% include toc.html sanitize=true html=content h_min=1 h_max=6 class="toc__menu" %}
               {% endif %}
             </nav>
-            <nav class="toc-custom">
-              {% if page.toc_ads %}
-              {% endif %}
-            </nav>
           </aside>
         {% endif %}
         {{ content }}
