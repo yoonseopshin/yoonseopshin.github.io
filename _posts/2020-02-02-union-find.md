@@ -1,0 +1,327 @@
+---
+title: "유니온파인드"
+description: "상호 배타적 집합을 표현할 때 사용하는 유니온파인드에 대해 알아보자."
+toc: true
+categories: [Algorithm]
+tags: [Algorithm, 유니온파인드, Disjoint Set, 상호배타적 집합, 서로소 집합, 2501번]
+math: true
+lang: ko
+redirect_from:
+  - "/algorithm/12/"
+---
+
+## 상호 배타적 집합과 유니온파인드
+
+### 정의
+상호 배타적 집합(**Disjoint Set**)이란 말은 어떤 두 부분집합 사이에 교집합은 없고, 부분집합들의 합집합은 전체 집합인 자료를 의미한다. <br>
+유니온파인드는 상호 배타적으로 이루어진 집합을 효율적으로 표현하기 위해 만들어진 자료구조이다. 유니온파인드 자료구조는 여러 원소가 존재할 때, 어떠한 두 원소를 하나의 집합으로 묶거나(**Union**) 두 원소가 같은 집합에 있는지 확인할 때(**Find**) 빠르게 연산할 수 있다.  
+
+$Union$ 연산과 $Find$ 연산을 지원해서 유니온파인드 자료구조라고 부른다.
+
+1. $Find$
+- 원소 $x$를 포함하는 집합을 찾는 연산
+2. $Union$
+- 원소 $x$와 원소 $y$를 합집합하는 연산
+
+
+### 배열 구현
+상호 배타적 집합을 표현하는 가장 간단한 방법은 1차원 배열로 표현하는 것이다.  
+
+초기 $set$을 다른 숫자로 초기화하면 서로 다른 $n$개의 집합을 쉽게 만들 수 있다. 이렇게 하면 해당 원소의 집합을 $O(1)$에 찾을 수 있다.  
+
+그러나 합치기 연산을 할 때 한쪽 집합의 원소를 다른쪽 집합으로 옮길 때 $O(n)$의 시간이 걸린다. 합치기 연산이 없을 경우에는 상관이 없지만 일반적으로는 쓰기 힘든 방식이다. 따라서 좀 더 빠른 방법이 필요하다.
+
+### 트리 구현
+트리를 사용해 상호 배타적 집합을 표현하면 유용하게 쓸 수 있다. 한 집합에 속하는 원소들을 트리로 묶어서 표현한다.
+
+<br>
+
+![]({{ site.url }}/assets/images/12-1.png ){: .align-center width="70%" height="60%"}
+
+<br>
+<br>
+
+
+## Find
+두 원소가 같은 집합에 속해 있는지 확인하는 방법은 각 원소가 포함된 트리의 루트를 찾아 비교하는 것이다. 트리와 루트는 항상 1:1 대응이므로 루트가 같다면 같은 트리에 속해있다. 따라서 트리의 루트에 있는 원소를 각 집합을 대표하는 원소로 설정하자.  
+위 그림에서 {1, 2, 3, 4, 5}를 포함하는 집합은 $1$, {6, 7}을 포함하는 집합은 $6$으로 표현할 수 있다.  
+따라서 트리에서의 $Find$ 연산은 주어진 원소가 포함된 집합을 대표하는 원소를 찾는 것이다.  
+<br>
+$Find$를 구현하기 위해서 자식 원소에서 부모 원소로 접근할 수 있어야 하지만 부모 원소에서 자식 원소로 접근할 필요는 없다. 따라서 부모를 저장하는 1차원 배열을 정의해서 구현하면 편리하다.
+
+<br>
+
+```java
+private static int find(int x) {
+    if (x == parent[x])
+        return x;
+    return find(parent[x]);
+}
+```
+
+<br>
+<br>
+
+## Union
+두 트리를 합치는 $Union$ 연산 역시 매우 간단하다. 각 트리의 루트를 찾은 후($Find$), 트리 하나를 다른 트리의 자손으로 넣어주면 된다.
+
+<br>
+
+```java
+private static void union(int x, int y) {
+    x = find(x);
+    y = find(y);
+    if (x != y)
+        parent[x] = y;
+}
+```
+
+<br>
+<br>
+
+## 최적화
+트리의 구조가 한 쪽으로 치우치는 경우를 생각해보자. <br>
+트리의 모든 원소가 같은 집합일 때 다음과 같은 경우가 생길 수 있다.  
+<br>
+
+![]({{ site.url }}/assets/images/12-2.png ){: .align-center width="70%" height="60%"}
+
+<br>
+
+$Find$ 연산과 $Union$ 연산은 트리의 높이에 비례하는 시간으로 $O(n)$을 갖는다. 애초에 배열로 구현하던 것보다 효율이 나빠지게 되었다.  
+BST에서 트리가 한 쪽으로 쏠리면 구조를 다시 잡는 것처럼 한 쪽으로 치우치지 않게끔 작업을 해 줄 필요가 있다. 
+
+### Union By Rank
+트리가 한 쪽으로 쏠리지 않게끔 하는 방법 중 쉽고 간편한 방법이 있다. 두 트리를 합칠 때 항상 높이가 더 낮은 트리를 더 높은 트리 밑에 집어 넣는 것이다.
+
+<br>
+
+| Union 전             |  Union 후 |
+:-------------------------:|:-------------------------:
+![]({{ site.url }}/assets/images/12-3.png ){: .align-center full}  |  ![]({{ site.url }}/assets/images/12-4.png ){: .align-center full}
+
+
+<br>
+$Union By Rank$는 다음과 같이 구현한다.
+<br>
+
+```java
+private static void union(int x, int y) {
+    x = find(x);
+    y = find(y);
+    if (x == y)
+        return;
+    if (rank[x] > rank[y]) {
+        x ^= y;
+        y ^= x;
+        x ^= y;
+    }
+    parent[x] = y;
+    if (rank[x] == rank[y])
+        rank[y]++;
+}
+```
+
+<br>
+트리의 높이는 합쳐진 두 트리의 높이가 같을 때만 증가하게 된다. 트리의 높이 $h$는 $h-1$인 트리 2개를 이용해서 만들 수 밖에 없으므로 $n$개의 원소로는 최대 높이가 $logN$인 트리밖에 만들 수 없다. <br>
+따라서 $Union By Rank$의 $Find$ 연산은 $O(logN)$, $Union$ 연산은 $O(logN)$이 된다.
+
+### 경로압축
+$Find$ 연산에서 루트를 찾았을 때, 해당 원소의 루트를 부모로 지정하면 다음 번의 연산부터는 경로를 따라 올라갈 것 없이 바로 루트를 찾을 수 있다.
+<br>
+게다가 $Find$ 연산이 재귀적으로 진행되기 때문에 루트를 찾아 나가는 과정에 있는 원소들 역시 루트로 경로 압축을 해줄 수 있다.
+<br>
+<br>
+예를 들어 $Find(0)$의 수행과정은 다음과 같다.
+
+<br>
+
+| $Find(0)$ 수행 전 | $Find(0)$ 수행 후 |
+:-------------------------:|:-------------------------:
+![]({{ site.url }}/assets/images/12-5.png ){: .align-center full}  |  ![]({{ site.url }}/assets/images/12-6.png ){: .align-center full}
+
+<br>
+경로 압축을 적용한 $Find$ 연산은 다음과 같다.
+<br>
+
+```java
+private static int find(int x) {
+	if (x == parent[x])
+		return x;
+	return parent[x] = find(parent[x]);
+}
+```
+
+<br>
+이 때 $Find$ 연산의 각 연산마다 분할상환 시간은 $O(\alpha(n))$이며 여기서 $\alpha(n)$는 함수 $n = f(x) = A(x,x)$의 <acronym title="A는 극도로 빠르게 성장하는 아커만 함수이다.">역함수</acronym>이다. 아커만 함수의 역함수이기 때문에 매우 느리게 증가한다. $\alpha(2^{65536}) = 5$이므로 일반적인 입력에 대해서 $O(\alpha(n)) \approx O(1)$라고 생각해도 무방하다. 이에 대한 증명은 [여기](https://ko.wikipedia.org/wiki/%EC%95%84%EC%BB%A4%EB%A7%8C_%ED%95%A8%EC%88%98)를 참고하자.
+
+<br>
+<br>
+
+## 문제
+
+<details>
+<summary p style="cursor:pointer">[1197번: 최소 스패닝 트리]</summary>
+<div markdown="1">
+
+<br>
+
+<https://www.acmicpc.net/problem/1197>
+
+<br>
+최소 스패닝 트리를 크루스칼 알고리즘으로 구현할 때 유니온파인드 알고리즘을 사용한다. 간선을 가중치에 대해 오름차순으로 정렬 후 하나씩 뽑으면서 싸이클이 이루지 않게 끔 스패닝 트리를 만들면 최소 스패닝 트리가 만들어 진다.
+
+<details>
+<summary p style="cursor:pointer">코드</summary>
+<div markdown="1">
+
+```java
+import java.io.*;
+import java.util.*;
+
+public class Main {
+
+    static FastIO io = new FastIO();
+    static int V, E, res;
+    static List<Edge> edges;
+    static int[] parent;
+
+    public static void main(String... args) throws IOException {
+        V = io.nextInt();   E = io.nextInt();
+        edges = new ArrayList<>(E);
+        for (int i = 0; i < E; i++) {
+            edges.add(new Edge(io.nextInt(), io.nextInt(), io.nextInt()));
+        }
+        parent = new int[V + 1];
+        Arrays.setAll(parent, i -> i);
+        Collections.sort(edges, (e1, e2) -> e1.w - e2.w);
+
+        for (Edge e : edges) {
+            if (find(e.n1) != find(e.n2)) {
+                union(e.n1, e.n2);
+                res += e.w;
+            }
+        }
+
+        io.write(res);
+    }
+
+    private static int find(int x) {
+        if (x == parent[x])
+            return x;
+        return parent[x] = find(parent[x]);
+    }
+
+    private static void union(int x, int y) {
+        x = find(x);
+        y = find(y);
+        if (x != y)
+            parent[x] = y;
+    }
+}
+
+class Edge {
+    int n1, n2, w;
+
+    public Edge(int n1, int n2, int w) {
+        this.n1 = n1;
+        this.n2 = n2;
+        this.w = w;
+    }
+}
+
+class FastIO { ... }	// 생략
+```
+
+</div>
+</details>
+
+</div>
+</details>
+
+<br>
+
+<details>
+<summary p style="cursor:pointer">[3830번: 교수님은 기다리지 않는다]</summary>
+<div markdown="1">
+
+<br>
+
+<https://www.acmicpc.net/problem/3830>
+
+<br>
+x의 루트까지의 상대적 무게 차이를 dist[x]라 하자. <br>
+a, b와의 상대적 무게 차이는 dist[b] - dist[a]로 표현할 수 있다. 
+
+1. `!` 쿼리: a, b를 union, a, b가 다른 집합이라면 dist를 갱신
+2. `?` 쿼리: a, b가 같은 집합이라면 dist[b] - dist[a], 다른 집합이라면 "UNKNOWN"
+
+자식이 있는 집합이 다른 집합으로 union 되는 경우 dist를 갱신해줘야 한다. 재귀적으로 수행되는 find 연산에서 처리해 줄 수 있다.
+
+<details>
+<summary p style="cursor:pointer">코드</summary>
+<div markdown="1">
+
+```java
+import java.io.*;
+import java.util.*;
+
+public class Main {
+
+    static FastIO io = new FastIO();
+    static int N, M, q, a, b;
+    static int[] parent, dist;
+
+    public static void main(String... args) throws IOException {
+        StringBuilder res = new StringBuilder();
+
+        while ((N = io.nextInt()) != 0) {
+            M = io.nextInt();
+            parent = new int[N + 1];
+            Arrays.setAll(parent, i -> i);
+            dist = new int[N + 1];
+
+            for (int i = 0; i < M; i++) {
+                q = io.next().charAt(0);    a = io.nextInt();   b = io.nextInt();
+                if (q == '!')
+                    union(a, b, io.nextInt());
+                else
+                    res.append(find(a) == find(b) ? dist[b] - dist[a] : "UNKNOWN").append('\n');
+            }
+        }
+
+        io.write(res);
+    }
+
+    private static int find(int x) {
+        if (x == parent[x])
+            return x;
+        int p = find(parent[x]);
+        dist[x] += dist[parent[x]];
+        return parent[x] = p;
+    }
+
+    private static void union(int x, int y, int diff) {
+        int px = find(x);
+        int py = find(y);
+        if (px == py)
+            return;
+        parent[py] = px;
+        dist[py] = dist[x] - dist[y] + diff;
+    }
+
+}
+
+class FastIO { ... }    // 생략
+```
+</div>
+</details>
+
+
+</div>
+</details>
+
+
+
+<br>
+<br>

@@ -1,0 +1,265 @@
+---
+title: "Django의 애플리케이션 개발 방식"
+description: "Django의 애플리케이션 개발 방식"
+toc: true
+categories: [Web]
+tags: [web, django, python, Pycharm, Application, MVT]
+lang: ko
+redirect_from:
+  - "/web/5/"
+---
+
+## MVT 패턴
+Django는 기존의 MVC 패턴의 개념을 그대로 받아 들인 MVT 패턴을 사용하고 있다. <br>
+
+<table style = "margin-left: auto; margin-right: auto;">
+    <th align = "center">기존</th>
+    <th align = "center">Django</th>
+    <tr><td align = "center">Model</td><td align = "center">Model</td></tr>
+    <tr><td align = "center">View</td><td align = "center">Template</td></tr>
+    <tr><td align = "center">Controller</td><td align = "center">View</td></tr>
+</table>
+
+
+<!-- | 기존 | 장고 |
+|:---:|:---:|
+| Model | Model |
+| View  | Template  |
+| Controller    | View  | -->
+
+- Model: DB에 저장되는 데이터를 의미한다.
+- View: 실질적으로 프로그램 로직이 동작하여 데이터를 가져오고 적절하게 처리한 결과를 템플릿에 전달하는 역할을 한다.
+- Template: 사용자에게 보여지는 UI를 처리한다.
+
+<br>
+
+| ![]({{ site.url }}/assets/images/d-a-0.png ){: .align-center} |
+|:--:|
+| *Django의 MVT 패턴* |
+
+<br>
+
+웹 클라이언트의 요청을 받고, 장고에서 MVT 패턴에 따라 처리하는 과정을 요약하면 다음과 같다.
+1. 클라이언트로부터 요청을 받으면 URLconf를 이용하여 URL을 분석한다.
+2. URL 분석 결과를 통해 URL에 대한 처리를 담당할 뷰를 결정한다.
+3. 뷰는 자신의 로직을 실행하면서 만약 DB 처리가 필요하면 모델을 통해 처리하고 그 결과를 반환받는다.
+4. 뷰는 자신의 로직 처리가 끝나면 템플릿을 사용하여 클라이언트에 전송할 HTML 파일을 생성한다.
+5. 뷰는 최종 결과로 HTML 파일을 클라이언트에게 보내 응답한다.
+
+<br>
+<br>
+
+## Model - DB 정의
+모델이란 사용될 데이터에 대한 정의를 담고 있는 장고의 클래스이다. <br>
+장고는 ORM 기법을 사용하여 애플리케이션에서 사용할 DB를 클래스로 매핑해서 코딩할 수 있다. <br>
+즉, 하나의 모델 클래스는 하나의 테이블에 매핑되고, 모델 클래스의 속성은 테이블의 컬럼에 매핑된다. <br> <br>
+
+이렇게 ORM 기법을 사용하여 테이블을 클래스로 매핑하면, 애플리케이션에서는 DB에 대한 액세스를 SQL 없이도 클래스를 다루는 것처럼 할 수 있어서 편리하다. <br> 또한 SQLite3, MySQL, PostgreSQL 등 DB 엔진을 변경하더라도 ORM을 통한 API는 변경할 필요가 없기 때문에, 필요에 따라 DB 엔진을 훨씬 쉽게 변경할 수 있다. <br>
+
+> ORM 대한 개념은 [여기](https://jayzzz.tistory.com/66)를 참고하자.
+
+<br>
+
+models.py에 다음과 같은 Person를 정의해 보자.
+```python
+from django.db import models
+
+class Person(models.Model):
+	first_name = models.CharField(max_length=30)
+last_name = models.CharField(max_length=30)
+```
+<br>
+Person 모델은 Django 내부적으로 SQL 명령을 사용하여 다음과 같은 DB 테이블을 생성한다.
+```sql
+CREATE TABLE myapp_person (
+    "id" serial NOT NULL PRIMARY KEY,
+    "first_name" varchar(30) NOT NULL,
+    "last_name" varchar(30) NOT NULL
+);
+```
+<br>
+
+장고는 테이블 및 컬럼을 자동으로 생성하기 위해 필요한 많은 규칙을 갖고 있다. 위의 예제는 그 중에서 다음과 같은 규칙이 적용된 것이다.
+- 테이블은 에플리케이션명과 모델 클래스명을 `_`로 연결하고, 모두 소문자로 표시한다. 원한다면 다른 이름으로 직접 지정할 수도 있다.
+- Primary Key는 Person 클래스에서 정의하지 않아도 장고에서 자동으로 부여한다. 개발자가 직접 지정할 수 있다.
+- 그 밖의 내용은 [여기](https://docS.djangoprojecT.com/en/2.1/topics/db/models/)를 참고하자.
+
+장고는 테이블을 모델 클래스로 정의하고 이를 실제 DB에 반영한 후에도 테이블에 데이터를 입력하고 입력된 데이터를 확인 및 변경할 수 있는 여러 가지 기능을 제공한다.
+<br>
+<br>
+
+## URLconf
+클라이언트로부터 요청을 받으면 장고는 가장 먼저 요청에 들어있는 URL을 분석한다. <br>
+즉 요청에 들어있는 URL이 urls.py 파일에 정의된 URL 패턴과 매칭되는지를 분석한다. <br><br>
+
+파이썬의 URL 정의 방식은 전통적인 자바나 PHP 계열의 URL보다 직관적이고 이해가기가 쉽다. <br> 
+URL을 정의하기 위해서는 다음 예제처럼 urls.py 파일에 URL과 처리 함수(View)를 매핑하는 파이썬 코드를 작성하면 된다. <br>
+이러한 URL/View 매핑을 URLconf라고 한다. <br>
+
+``` python
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    path('articles/2003/', views.special_case_2003),
+    path('articles/<int:year>', views.year_archive),
+    path('articles/<int:year>/<int:month>/', views.month_archive),
+    path('articles/<int:year>/<int:month>/<slug:slug>', views.article_detail),
+]
+```
+
+<br>
+
+위 예시에서 articles/2003/ 부분이 URL이고 views.special_case2003 부분이 처리 함수(뷰)이다. <br>
+<br>
+
+이와 같이 URL과 처리 함수를 별도로 정의하고, 이 둘을 매핑하는 방법은 개발자에게 많은 유연성을 제공한다. <br>
+URL 자체에 처리 함수나 처리용 스크립트 파일 이름이 들어가면 변경이 어려워지기 때문이다. <br>
+반면 URLconf를 사용하면 URL과 뷰 함수를 서로 자유롭게 연결할 수 있어서 규모가 큰 프로젝트를 개발할 때처럼 URL과 뷰 함수 이름이 자주 바뀌는 경우에도 URLconf에서 매핑한 부분만 수정하면 되므로 변경이 쉬워진다.<br>
+
+웹 클라이언트가 웹 서버에 페이지 요청 시, 장고에서 URL을 분석하는 순서를 간단히 요약하면 다음과 같다.
+1. settings.py 파일의 ROOT_URLCONF 항목을 읽어 최상위 URLconf(urls.py)의 위치를 파악
+2. URLconf를 로딩하여 urlpatterns 변수에 지정되어 있는 URL 리스트를 검사
+3. 위에서부터 순서대로 URL 리스트의 내용을 검사하면서 URL 패턴이 매치되면 검사를 종료
+4. 매치된 URL의 View를 호출한다. 여기서 View는 함수 또는 클래스의 메소드이다. 호출 시 HttpRequest 객체와 매칭될 때 추출된 단어들을 View에 인자로 넘겨 줌
+5. URL 리스트 끝까지 검사했는데도 매칭에 실패하면 에러를 처리하는 View를 호출
+
+위의 예시에서 URL 패턴을 정의할 때 `<>`를 사용하는 부분이 있다. <br>
+이는 URL 패턴의 일부 문자열을 추출하기 위한 것이며, `<type:name>` 형식으로 사용한다. <br>
+
+`path('articles/<int:year>/', views.year_archive),`
+
+<br>
+
+이 라인의 의미는 요청 URL이 `/articles/2020/`처럼 `<>` 부분이 정수이면 매치되고 `/articles/foo/`처럼 정수가 아니면 매치되지 않는다. <br>
+또한 매치된 경우에는 매치된 문자열 `2020`을 문자열 `year`에 할당한다. <br>
+즉, 요청 URL이 `/articles/2020/`이면 뷰 함수를 `views.year_archive(request, year=2020)`처럼 호출한다. <br>
+
+`<>`를 Path Converter라고 부르는데, 여기에 사용되는 타입은 다음과 같다.
+- str: `/`를 제외한 모든 문자열과 매치됨. 타입을 지정하지 않았다면 디폴트로 str 타입을 사용함.
+- int: 0 또는 양의 정수와 매치됨. 매치된 정수는 파이썬의 int 타입으로 변환됨.
+- slug: <acronym title="ASCII, 숫자, 하이픈, 밑줄로만 구성">slug 형식의 문자열</acronym>과 매치됨.
+- uuid: UUID 형식의 문자열과 매치됨. 매치된 문자열을 파이썬의 UUID 타입으로 변환됨.
+- path: `/`를 포함한 모든 문자열과 매치됨. 이는 URL 패턴의 일부가 아니라 전체를 추출하고자 할 때 많이 사용
+
+<br>
+URL 패턴에 정규표현식<sub>Regular Expression</sub>을 사용하면 URL을 좀 더 세밀하게 표현하거나, 복잡한 URL도 표현할 수가 있다. <br>
+예를 들어 정규표현식을 사용하여 앞서의 예시와 동일한 URL 패턴을 작성하면 다음과 같다.
+
+```python
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    path('articles/2003/', views.special_case_2003),
+    re_path(r'^articles/(?P<year>[0-9]{4})/$', views.year_archive),
+    re_path(r'^articles/(?P<year>[0-9]{4})/(?P<month>[0-9]{2})/$', views.month_archive),
+    re_path(r'^articles/(?P<year>[0-9]{4})/(?P<month>[0-9]{2})/(?P<slug>[\w-]+)/$', views.article_detail),
+]
+```
+
+<br>
+
+`path()` 함수에서의 `<int:year>` 부분이 `re_path()` 함수에서는 `(?P<year>[0-9]{4})`처럼 정규표현식을 사용하면서, 모든 정수가 아니라 `0-9`로 이뤄진 4자리 숫자만 매치되도록 한정하고 있다. <br>
+
+보통은 `path()` 함수를 많이 사용하고, URL을 좀 더 정교하게 정의하고자 할 때는 `re_path()` 함수와 정규표현식을 사용한다.
+
+<br>
+<br>
+
+## View - 로직 정의
+장고는 웹 요청에 있는 URL을 분석하고, 그 결과로 해당 URL에 매핑된 View를 호출한다. <br>
+
+일반적으로 View는 웹 요청을 받아서 DB 접속 등 해당 애플리케이션의 로직에 맞는 처리를 하고, 그 결과 데이터를 HTML로 변환하기 위하여 템플릿 처리를 한 후에, 최종 HTML로 된 응답 데이터를 웹 클라이언트로 반환하는 역할을 한다. <br>
+<br>
+장고에서의 View는 함수 또는 클래스의 메소드 형태로 작성되며, 웹 요청을 받고 응답을 반환한다. <br> 
+여기서 응답은 HTML 데이터일 수도 있고, 리다이렉션 명령일 수도 있고, 404 에러 메시지일 수도 있다. <br>
+다양한 형태의 응답 데이터를 만들어내기 위한 로직을 View에 작성하는 것이다. <br>
+이러한 View는 보통 views.py 파일에 작성하지만, 원한다면 다른 파일에 작성해도 무방하다. <br>
+다만 파이썬 경로에 있는 파일이어야 장고가 찾을 수 있다.<br>
+
+간단한 예로 현재의 날짜와 시간을 HTML로 반환해주는 뷰를 작성해 보자. <br>
+
+```python
+from django.http import HttpResponse
+import datetime
+
+def current_datetime(request):
+    now = datetime.datetime.now()
+    html = "<html><body>It is now %s.</body></html>" % now
+    return HttpResponse(html)
+```
+<br>
+
+이 경우는 클래스가 아니라 함수로 뷰를 작성한 예시이다. <br>
+뷰 함수는 첫 번째 인자로 <acronym title="위 예에서는 request">HttpRequest 객체</acronym>를 받는다. 그리고 필요한 처리를 한 후에 최종적으로 HttpRequest 객체를 반환한다. <br> <br>
+
+만약 에러를 반환하고 싶다면 에러 응답 객체를 반환하면 된다. 에러 응답 클래스는 모두 HttpResponse 클래스의 하위 클래스로 정의되어 있다.
+
+`return HttpResponseNotFound('<h1>page not found</h1>')`
+
+<br>
+<br>
+
+## Template - 화면 UI 정의
+장고가 웹 클라이언트에게 반환하는 최종 응답은 HTML 텍스트이다. <br>
+개발자가 응답에 사용할 *.html 파일을 작성하면, 장고는 이를 해석해서 최종 HTML 텍스트 응답을 생성하고, 이를 클라이언트에게 보내준다. <br>
+클라이언트(보통 웹 브라우저)는 응답으로 받은 HTML 텍스트를 해석해서 우리가 보는 웹 브라우저 화면에 UI를 보여주는 것이다. <br> <br>
+
+이런 과정에서 개발자가 작성하는 *.html 파일을 템플릿이라 부르며, 여기에 화면 UI 모습을 템플릿 문법에 맞게 작성한다. <br> <br>
+
+장고는 자체 템플릿 엔진을 갖고 있기 때문에 디자이너도 쉽게 이해할 수 있는 문법을 제공한다. <br>
+화면의 디자인을 변경할 일이 생기면 디자이너는 프로그램 로직에 상관없이문법에 맞게 템플릿만 수정하면 되므로, 디자이너와 개발자 간에 협업이 편리하다. <br>
+또한 장고에서 제공하는 템플릿은 템플릿 태그/필터 기능을 사용하여 파이썬 코드를 직접 사용할 수 있기 때문에 더욱 강력하고 확장하기 쉬운 구조로 되어 있다. <br><br>
+
+템플릿 파일은 *.html 확장자를 가지며, 장고의 템플릿 시스템 문법에 맞게 작성한다. <br>유의할 점은 템플릿 파일을 적절한 디렉토리에 위치시켜야 한다는 것이다. <br>즉, 장고에서 템플릿 파일을 찾는 방식을 이해하고 있어야 하며, 장고는 그에 맞는 위치에 템플릿 파일이 위치해야 템플릿 파일을 찾을 수 있다. <br><br>
+
+장고에서 템플릿 파일을 찾을 때는 TEMPLATE_DIRS 및 INSTALLED_APPS에서 지정된 앱의 디렉토리를 검색한다. <br>이 항목들은 프로젝트 설정 파일인 settings.py 파일에 정의되어 있다. <br>여러 개의 디렉토리를 지정할 수 있는데, 지정된 순서대로 디렉토리를 검색하여 템플릿 파일을 찾는다. <br>
+
+만약 settings.py 파일에 아래와 같이 정의되어 있다면, 
+
+```python
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'foo.apps.PollsConfig',
+]
+
+TEMPLATES = [
+    {
+        . . .
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        . . .
+    },
+]
+```
+<br>
+
+BASE_DIR 탐색 후 INSTALLED_APPS 리스트에 있는 순서대로 템플릿 파일을 차례대로 탐색한다.
+
+
+## MVT 코딩 순서
+모델, 뷰, 템플릿 셋 중에서 무엇을 먼저 코딩해야 하는지에 대해 정해진 순서는 없다. <br>
+MVT 방식에 따르면 화면 설계는 뷰와 템플릿 코딩으로 연결되고, 테이블 설계는 모델 코딩에 반영된다. <br>
+그렇기 때문에 독립적으로 개발할 수 있는 모델을 먼저 코딩하고, 뷰와 템플릿은 서로 영향을 미치므로 모델 이후에 같이 코딩하는 것이 일반적이다. <br><br>
+
+뷰와 템플릿의 코딩 순서도 굳이 정할 필요는 없지만, UI 화면을 생각하면서 로직을 풀어 나가는 것이 쉽기 때문에 보통 템플릿을 먼저 코딩한다.<br> 
+다만 클래스형 뷰처럼 뷰의 코딩이 매우 간단한 경우에는 뷰를 먼저 코딩하고, 그 다음 템플릿을 코딩한다.
+
+1. 프로젝트 뼈대 만들기: 프로젝트 및 앱 개발에 필요한 디렉토리와 파일 생성
+2. 모델 코딩하기: 테이블 관련 사항을 개발(models.py, admin.py 파일)
+3. URLconf 코딩하기: URL 및 뷰 매핑 관계를 정의(urls.py 파일)
+4. 템플릿 코딩하기: 화면 UI 개발(templates/ 디렉토리 하위의 *.html 파일들)
+5. 뷰 코딩하기: 애플리케이션 로직 개발(views.py 파일)
+
+
+<br>
+<br>
+
+> 이 글은 **`파이썬 웹 프로그래밍: Django(장고)로 배우는 쉽고 빠른 웹 개발`**을 참고하여 작성했다.

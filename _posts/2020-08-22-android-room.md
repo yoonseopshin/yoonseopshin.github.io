@@ -1,0 +1,500 @@
+---
+title: "안드로이드 Room"
+description: "SQLite를 보다 세련되게 활용하는 Room에 대해 알아보자"
+toc: true
+categories: [App]
+tags: [app, android, room, kotlin]
+math: true
+lang: ko
+redirect_from:
+  - "/app/65/"
+---
+
+## App database
+앱 내부 데이터베이스에 데이터를 저장하는 방법은 크게 `SharedPreferences`와 `SQLite`가 있다. 저장하려는 데이터가 비교적 작은 경우(자동로그인 유무, 설정 값)에는 주로 `SharedPreferences`로 관리하며 반복적이거나 구조화된 데이터는 `SQLite`로 관리한다. 이 포스트에서는 SQLite API를 직접 사용하는 `android.database.sqlite`(SQLiteOpenHelper)와 이를 좀 더 세련되게 도와주는 `Room`에 대해 정리한다.  
+간단한 전화번호부 앱을 만들어서 `SQLiteOpenHelper`를 이용한 방법과 `Room`을 이용하는 방법으로 진행되며 레이아웃은 다음과 같다. 
+
+![]({{ site.url }}/assets/images/65-1.png ){: .align-center width="70%" height="50%"}
+
+```xml
+<!-- activity_main.xml -->
+
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <EditText
+        android:id="@+id/nameEditText"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:hint="이름"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <EditText
+        android:id="@+id/phoneNumberEditText"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:hint="전화번호"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/nameEditText" />
+
+    <Button
+        android:id="@+id/addButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/phoneNumberEditText"
+        android:text="추가"
+         />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/phoneBookRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/addButton"
+        app:layout_constraintBottom_toBottomOf="parent"
+         />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+```
+
+## SQLiteOpenHelper
+먼저 SQL 데이터베이스의 스키마를 체계적으로 관리하기 위해 계약 클래스를 만들자. 계약 클래스는 URI, 테이블 및 열의 이름을 정의하는 상수를 관리하는 클래스이다. 계약 클래스를 통해 동일한 패키지의 다른 모든 클래스에 동일한 상수를 사용할 수 있다. 계약 클래스를 구성하는 방법은 루트 수준에 있는 데이터베이스 전체에 전역적인 정의를 추가하는 것이다. 그런 다음 각 테이블의 내부를 구성한다.  
+
+```kotlin
+// PhoneBookContract
+import android.provider.BaseColumns
+
+object PhoneBookContract {
+    object PhoneBookEntry : BaseColumns {
+        const val TABLE_NAME = "phone_book"
+        const val NAME = "name"
+        const val PHONE_NUMBER = "phone_number"
+    }
+
+    private const val SQL_CREATE_ENTRIES =
+        "CREATE TABLE ${PhoneBookEntry.TABLE_NAME} (" +
+                "${BaseColumns._ID} INTEGER PRIMARY KEY," +
+                "${PhoneBookEntry.NAME} TEXT," +
+                "${PhoneBookEntry.PHONE_NUMBER} TEXT)"
+
+    private const val SQL_DELETE_ENTRIES = "DROP TABLE IF EXISTS ${PhoneBookEntry.TABLE_NAME}"
+}
+```
+
+다음으로 데이터베이스 및 테이블의 CRUD를 관리해야 한다. 이러한 기능을 처리하기 위해 `SQLiteOpenHelper`를 사용한다. 또한 `SQLiteOpenHelper`에는 데이터베이스 관리를 위한 유용한 API들을 포함하고 있다. 개발자는 필요에 따라 `getWritableDatabase()`, `getReadableDatabase()`를 호출하며 데이터베이스 참조를 가져와서 작업을 처리할 수 있다.  
+
+`SQLiteOpenHelper`를 사용하려면 `onCreate()` 및 `onUpgrade()` 콜백 메소드를 재정의하는 서브클래스를 생성해야 한다. 이 외에도 `onDowngrade()` 또는 `onOpen()` 메소드를 구현할 수도 있다.  
+
+이름과 번호를 입력받아 데이터베이스에 추가하는 `insert()`와 전체 데이터를 가져오는 `getAll()` 메소드도 다음과 같이 만들자. 
+
+```kotlin
+// PhoneBookDbHelper
+
+import android.content.Context
+import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteOpenHelper
+import com.example.app_database_test.PhoneBookContract.CREATE_ENTRIES
+import com.example.app_database_test.PhoneBookContract.DELETE_ENTRIES
+
+class PhoneBookDbHelper(context: Context) :
+    SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
+
+    companion object {
+        const val DATABASE_VERSION = 1
+        const val DATABASE_NAME = "phone_book.db"
+    }
+
+    override fun onCreate(db: SQLiteDatabase?) {
+        db?.execSQL(CREATE_ENTRIES)
+    }
+
+    override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
+        db?.execSQL(DELETE_ENTRIES)
+        onCreate(db)
+    }
+
+    fun insert(name: String, phoneNumber: String) {
+        val db = this.writableDatabase
+        val values = ContentValues().apply {
+            put(PhoneBookEntry.NAME, name)
+            put(PhoneBookEntry.PHONE_NUMBER, phoneNumber)
+        }
+        db?.insert(PhoneBookEntry.TABLE_NAME, null, values)
+    }
+
+    fun getAll() : List<Contact> {
+        val db = this.readableDatabase
+        val cursor = db.query(PhoneBookEntry.TABLE_NAME, null, null,
+            null, null, null, null)
+        val contactList = arrayListOf<Contact>()
+        with(cursor) {
+            while (moveToNext()) {
+                val id = cursor.getInt(0)
+                val name = cursor.getString(1)
+                val phoneNumber = cursor.getString(2)
+                contactList.add(Contact(id, name, phoneNumber))
+            }
+        }
+        return contactList
+    }
+}
+```
+
+`getAll()`의 리턴 값으로 사용되는 `Contact` 데이터 클래스는 다음과 같다.
+
+```kotlin
+// Contact
+import java.util.*
+
+data class Contact(val id: Int, val name: String, val phoneNumber: String) {
+    override fun equals(other: Any?): Boolean {
+        (other as? Contact)?.let {
+            return this.id == other.id
+        } ?: return super.equals(other)
+    }
+
+    override fun hashCode(): Int {
+        return Objects.hash(this.id)
+    }
+}
+```
+
+여기서는 데이터베이스의 적용을 확인하는 용도로 사용하므로 리사이클러 뷰와 어댑터에 관한 설명은 생략한다. MainActivity에서는 `추가` 버튼에 이름과 번호를 데이터베이스에 저장하고 데이터베이스에 있는 데이터를 화면에 띄우는 작업을 하는 리스너를 달아준다.
+
+```kotlin
+// MainActivity
+import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import kotlinx.android.synthetic.main.activity_main.*
+
+class MainActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        init()
+    }
+
+    private fun init() {
+        val dbHelper = PhoneBookDbHelper(this)
+
+        phoneBookRecyclerView.layoutManager = LinearLayoutManager(this)
+        val adapter = ContactListAdapter()
+        adapter.submitList(dbHelper.getAll())
+        phoneBookRecyclerView.adapter = adapter
+
+        addButton.setOnClickListener {
+            dbHelper.insert(nameEditText.text.toString(), phoneNumberEditText.text.toString())
+            nameEditText.text.clear()
+            phoneNumberEditText.text.clear()
+            adapter.submitList(dbHelper.getAll())
+        }
+    }
+}
+```
+
+결과는 다음과 같다. 
+
+![]({{ site.url }}/assets/images/65-2.gif ){: .align-center width="70%" height="50%"}
+
+다른 쿼리들도 공식 문서를 참고해서 하면 쉽게 따라할 수 있을 것이다. 물론 로우 쿼리를 직접 날릴 수도 있다. 그러나 안드로이드 공식문서에서는 앱 내부 `SQLite`에 접근할 때는 다음과 같은 이유로 `Room`을 이용할 것을 권장하고 있다. 
+
+> 주의: 이러한 API는 강력하기는 하지만 상당히 낮은 수준이므로 다음과 같이 사용하는 데 상당한 시간과 노력이 필요합니다.
+- 원시 SQL 쿼리에 관한 컴파일 시간 확인이 없습니다. 따라서 데이터 그래프가 변경됨에 따라 영향을 받는 SQL 쿼리를 수동으로 업데이트해야 합니다. 이 과정은 시간이 오래 걸리고 오류가 쉽게 발생할 수 있습니다.
+- SQL 쿼리와 데이터 객체 간에 변환하려면 많은 상용구 코드를 사용해야 합니다.
+이러한 이유 때문에 앱의 SQLite 데이터베이스에 있는 정보에 액세스하기 위한 추상화 레이어로 Room 지속성 라이브러리를 사용하는 것이 좋습니다.
+
+## Room
+`Room`은 안드로이드 JetPack의 구성요소 중 하나로 `SQLite` 객체 매핑 라이브러리이다. `SQLite` 테이블 데이터를 자바 객체로 쉽게 변환하고 `SQLite` 문을 컴파일 타임에 확인할 수 있다. 또한 `LiveData observable`, `RxJava`, `Flowable`을 반환할 수 있다.  
+
+모던 안드로이드 프로그래밍의 핵심인 JetPack의 다른 아키텍처들과 함께 사용하면 쉽게 데이터베이스를 관리할 수 있다. 
+
+### Room 구성 요소
+- Database
+데이터베이스 홀더를 포함하며 앱의 지속적인 관계형 데이터의 기본 연결을 위한 기본 액세스 포인트 역할을 한다. 런타임 시 `Room.databaseBuilder()` 또는 `Room.inMemoryDatabaseBuilder()`를 호출하여 데이터베이스 인스턴스를 가져올 수 있다.
+- Entity
+데이터베이스 테이블을 의미한다.
+- DAO
+데이터베이스에 접근하는 데 사용하는 메소드를 정의한다.
+
+![room-architecture]({{ site.url }}/assets/images/65-3.png ){: .align-center width="70%" height="70%"}
+
+### Room 적용
+지금부터 `SQLiteOpenHelper`로 작성한 코드를 `Room`으로 변환하면서 익혀보자. 
+
+앱에서 `Room`을 사용하기 위해 앱 단의 `build.gradle`에 종속 항목을 추가한다. 자바를 사용하고 있으면 `annotationProcessor`를, 코틀린을 사용하고 있으면 `kapt`를 사용한다. `kapt`를 사용하기 위해서는 플러그인도 추가해 주어야 한다.
+
+```gradle
+apply plugin: 'kotlin-kapt'
+
+dependencies {
+    implementation 'androidx.room:room-runtime:2.2.2'
+    kapt 'androidx.room:room-compiler:2.2.2'
+}
+```
+
+기존의 `Contact`와 구분하기 위해 `RoomContact` 데이터 클래스를 다음과 같이 정의한다.
+
+```kotlin
+// RoomContact
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import com.example.app_database_test.contract.PhoneBookContract.PhoneBookEntry
+import com.example.app_database_test.sqliteopenhelper.Contact
+import java.util.*
+
+@Entity(tableName = PhoneBookEntry.TABLE_NAME)
+data class RoomContact(
+    @ColumnInfo(name = PhoneBookEntry.NAME) val name: String,
+    @ColumnInfo(name = PhoneBookEntry.PHONE_NUMBER) val phoneNumber: String
+) {
+    @PrimaryKey(autoGenerate = true) var id: Int = 0
+
+    override fun equals(other: Any?): Boolean {
+        (other as? Contact)?.let {
+            return this.id == other.id
+        } ?: return super.equals(other)
+    }
+
+    override fun hashCode(): Int {
+        return Objects.hash(this.id)
+    }
+}
+```
+
+기본적으로 테이블 이름과 칼럼의 이름은 데이터 클래스의 이름에 맞게 정의된다. 이미 정의해 둔 계약 클래스를 사용하기 위해서는 `@Entity` 어노테이션과 `@ColumnInfo` 어노테이션에 이름 정보를 주어야 한다.   
+
+다음으로 `ContactDao` DAO를 정의한다. 위에서 수행한 쿼리는 Read와 Insert밖에 없으므로 2개만 만들자.
+
+```kotlin
+// ContactDao
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.Query
+import com.example.app_database_test.contract.PhoneBookContract.PhoneBookEntry
+
+@Dao
+interface RoomContactDao {
+    @Query("SELECT * FROM ${PhoneBookEntry.TABLE_NAME}")
+    fun getAll(): List<RoomContact>
+
+    @Insert
+    fun insert(contact: RoomContact)
+}
+```
+
+마지막 구성 요소인 데이터베이스는 `RoomDatabase()`를 상속받은 추상클래스를 정의한다.
+
+```kotlin
+// AppDatabase
+import androidx.room.Database
+import androidx.room.RoomDatabase
+
+@Database(entities = [RoomContact::class], version = 1)
+abstract class AppDatabase : RoomDatabase() {
+    abstract fun contactDao(): RoomContactDao
+}
+```
+
+`MainActivity`에서 바뀐 점은 데이터베이스에 접근하는 부분만 바뀌었다. 비교를 위해 `init2()`에 `Room`으로 접근하는 코드를 작성했다. 
+
+```kotlin
+// MainActivity
+import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.room.Room
+import com.example.app_database_test.R
+import com.example.app_database_test.adapter.ContactListAdapter
+import com.example.app_database_test.adapter.RoomContactListAdapter
+import com.example.app_database_test.room.AppDatabase
+import com.example.app_database_test.room.RoomContact
+import com.example.app_database_test.sqliteopenhelper.PhoneBookDbHelper
+import kotlinx.android.synthetic.main.activity_main.*
+
+class MainActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+//        init()
+        init2()
+    }
+
+    private fun init2() {
+        val db = Room.databaseBuilder(this,
+            AppDatabase::class.java,
+            "phone_book")
+            .allowMainThreadQueries()
+            .build()
+
+        val contactDao = db.contactDao()
+
+        phoneBookRecyclerView.layoutManager = LinearLayoutManager(this)
+        val adapter = RoomContactListAdapter()
+        adapter.submitList(contactDao.getAll())
+        phoneBookRecyclerView.adapter = adapter
+
+        addButton.setOnClickListener {
+            contactDao.insert(RoomContact(nameEditText.text.toString(), phoneNumberEditText.text.toString()))
+            nameEditText.text.clear()
+            phoneNumberEditText.text.clear()
+            adapter.submitList(contactDao.getAll())
+        }
+    }
+
+    private fun init() {
+        val dbHelper = PhoneBookDbHelper(this)
+
+        phoneBookRecyclerView.layoutManager = LinearLayoutManager(this)
+        val adapter = ContactListAdapter()
+        adapter.submitList(dbHelper.getAll())
+        phoneBookRecyclerView.adapter = adapter
+
+        addButton.setOnClickListener {
+            dbHelper.insert(nameEditText.text.toString(), phoneNumberEditText.text.toString())
+            nameEditText.text.clear()
+            phoneNumberEditText.text.clear()
+            adapter.submitList(dbHelper.getAll())
+        }
+    }
+}
+```
+
+`Room`을 이용하여 데이터베이스 관련 작업을 수행할 때는 백그라운드 쓰레드에서 실행해야 한다. 지금은 테스트를 위해 `Room.databaseBuilder`에 `allowMainThreadQueries()`를 호출한 상태이므로 메인 쓰레드(UI 쓰레드)에서 데이터베이스 작업을 할 수 있다.  
+
+### LiveData
+데이터베이스에 변경이 있을 때마다 직접 화면을 갱신하는 작업은 번거로우며 실수가 나올 수 있다. 백그라운드 쓰레드로 `Room`을 수행하기 전에 `LiveData`로 관찰 가능한 객체로 만들자.  
+위의 예시에서 관찰하고 싶은 객체는 `RoomContact` 리스트이다. `LiveData`로 감싸주면 관찰 가능한 객체로 변경된다. 
+
+```kotlin
+// RoomContactDao
+import androidx.lifecycle.LiveData
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.Query
+import com.example.app_database_test.contract.PhoneBookContract.PhoneBookEntry
+
+@Dao
+interface RoomContactDao {
+    @Query("SELECT * FROM ${PhoneBookEntry.TABLE_NAME}")
+    fun getAll(): LiveData<List<RoomContact>>
+
+    @Insert
+    fun insert(contact: RoomContact)
+}
+```
+
+`MainActivity`에서는 옵저버를 달아두면 데이터가 변경될 때마다 자동으로 UI가 갱신된다.
+
+```kotlin
+// MainActivity
+import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.room.Room
+import com.example.app_database_test.R
+import com.example.app_database_test.adapter.ContactListAdapter
+import com.example.app_database_test.adapter.RoomContactListAdapter
+import com.example.app_database_test.room.AppDatabase
+import com.example.app_database_test.room.RoomContact
+import com.example.app_database_test.sqliteopenhelper.PhoneBookDbHelper
+import kotlinx.android.synthetic.main.activity_main.*
+
+class MainActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+//        init()
+        init2()
+    }
+
+    private fun init2() {
+        val db = Room.databaseBuilder(this,
+            AppDatabase::class.java,
+            "phone_book")
+            .allowMainThreadQueries()
+            .build()
+
+        val contactDao = db.contactDao()
+
+        phoneBookRecyclerView.layoutManager = LinearLayoutManager(this)
+        val adapter = RoomContactListAdapter()
+        phoneBookRecyclerView.adapter = adapter
+
+        contactDao.getAll().observe(this, {
+            adapter.submitList(it)
+        })
+
+        addButton.setOnClickListener {
+            contactDao.insert(RoomContact(nameEditText.text.toString(), phoneNumberEditText.text.toString()))
+            nameEditText.text.clear()
+            phoneNumberEditText.text.clear()
+        }
+    }
+
+    private fun init() {
+        val dbHelper = PhoneBookDbHelper(this)
+
+        phoneBookRecyclerView.layoutManager = LinearLayoutManager(this)
+        val adapter = ContactListAdapter()
+        adapter.submitList(dbHelper.getAll())
+        phoneBookRecyclerView.adapter = adapter
+
+        addButton.setOnClickListener {
+            dbHelper.insert(nameEditText.text.toString(), phoneNumberEditText.text.toString())
+            nameEditText.text.clear()
+            phoneNumberEditText.text.clear()
+            adapter.submitList(dbHelper.getAll())
+        }
+    }
+}
+```
+
+### Coroutine
+이전에 메인 쓰레드에서 수행했던 데이터베이스 작업을 백그라운드 쓰레드에서 처리하자. 전통적인 자바의 쓰레드로 처리할 수도 있지만 코루틴을 적용하여 백그라운드에서 처리하는 방법으로 개선해보자. 코루틴에 대한 설명은 생략한다.
+
+우선 앱 단의 `build.gradle`에 종속 항목을 추가한다. 
+
+```gradle
+dependencies {
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.2.0-alpha01'
+}
+```
+
+`MainActivity`에서 데이터베이스에 값을 넣는 코드를 코루틴 블락으로 감싸준다. 
+
+```kotlin
+addButton.setOnClickListener {
+    lifecycleScope.launch(Dispatchers.IO) {
+        contactDao.insert(RoomContact(nameEditText.text.toString(), phoneNumberEditText.text.toString()))
+        nameEditText.text.clear()
+        phoneNumberEditText.text.clear()
+    }
+}
+```
+
+`Room`을 비롯하여 UI가 멈춰보일 수 있을 만한 작업들은 **무조건** 비동기로 수행해야 한다. 코틀린 유저라면 코루틴을 이용하여 비교적 쉽게 비동기 작업을 처리할 수 있으니 코루틴 역시 공부를 해야 한다.
+
+## 결론
+`Room`은 `SQLite`를 직접 제어하는 것보다 훨씬 간결하고 세련되게 처리할 수 있다. 또한 다른 안드로이드 아키텍처 컴포넌트들과 호환도 잘 되므로 잘 숙지하는 것이 좋을 듯 싶다.
+
+
+> 전체 소스코드는 [Github](https://github.com/sys09270883/room-tutorial)에서 확인할 수 있다.
+
+<br>
+<br>

@@ -1,0 +1,528 @@
+---
+title: "최단경로 알고리즘"
+description: "가장 비용이 적은 경로를 찾는 알고리즘에 대해 알아보자."
+toc: true
+categories: [Algorithm]
+tags: [Algorithm, 다익스트라, 벨만 포드, 플로이드 와샬, 최단경로, 그래프]
+math: true
+lang: ko
+redirect_from:
+  - "/algorithm/10/"
+---
+
+## 최단경로
+최단경로 문제는 두 노드를 연결할 때 필요한 비용이 가장 작은 경로를 찾는 문제이다. 가중치가 있는 그래프에서는 간선의 가중치의 합이 최소가 되도록 하는 경로를 찾으려는 것이 목적이다. 최단경로 문제에는 다음과 같은 유형이 있다.
+
+1. **단일 출발(single-source)** 최단경로: 단일 노드에서 출발하여 그래프 내의 모든 다른 노드에 도착하는 가장 짧은 경로를 찾는 문제
+2. **단일 도착(single-destination)** 최단경로: 모든 노드에서 출발하여 한 노드로 도착하는 가장 짧은 경로를 찾는 문제, 간선을 역으로 연결하면 **단일 출발** 최단경로 문제와 동일
+3. **단일 쌍(single-pair)** 최단경로: 주어진 노드 u, v에 대해 u에서 v까지의 최단경로를 찾는 문제
+4. **전체 쌍(all-pair)** 최단경로: 그래프 내 모든 노드 쌍들 사이의 최단 경로를 찾는 문제
+
+<br>
+
+### Optimal Substructure
+각 유형에 따라 사용하는 알고리즘을 알아보기 전 최단경로의 중요한 속성을 알아보자.  
+다익스트라 알고리즘과 벨만 포드 알고리즘 등 최단 경로를 찾을 때 핵심은 **최단경로의 부분 경로는 최단경로**라는 점이다.  
+
+*이에 대한 자세한 증명은 [여기](http://www.problems.kr/03graph/shortest_path/index.html)를 확인하자.*
+
+위 정리를 확장하면 최단경로를 다음과 같이 분해할 수 있다.
+
+$$
+D(s, v) = D(s, u) + w(u, v)
+$$
+
+만약 새로운 경로의 거리가 기존의 경로보다 작다면 최단경로를 갱신한다. 이렇게 노드별로 확장해 나가면 $s$에서 $v$사이의 최단경로를 구할 수 있다. <br><br>
+이와 같이 어떤 문제의 최적해가 그 부분 문제들의 최적해들로 구성되어 있다면 해당 문제는 **optimal substructure**를 가진다고 한다. 이 속성을 가지고 다이나믹 프로그래밍, 그리디 알고리즘을 적용해 문제를 효율적으로 풀 수 있다.
+
+### Edge Relaxation
+최단경로는 **edge relaxation**이라는 연산을 통해 갱신된다. 이는 optimal substructure의 특징에서 파생된 것이다.<br><br>
+우선 시작노드 $s$에서 임의의 노드 $z$로의 최단경로를 구해보자. 그리고 현재 시점에서 $s, z$ 사이의 최단거리 $d(z)$는 75, $s, u$ 사이의 최단거리 $d(u)$는 50이라고 두자.<br><br>
+그런데 탐색 과정에서 간선 $e$를 경유하는 경로의 거리가 총 60이라고 한다면, 기존에 우리가 알고 있는 $d(z)$보다 짧아서 기존 $d(z)$가 최단경로가 아니게 된다. 이에 최단경로를 구성하고 있는 노드와 간선 정보, 그리고 거리의 합을 갱신한다. 이러한 작업이 바로 **edge relaxation**이다. <br><br>
+
+
+![](https://i.imgur.com/nqdnANR.png){: .align-center width="70%" height = "60%"}
+  
+<br>
+즉, edge relaxation은 최단경로 알고리즘을 수행하는 과정에서 경로를 구성하고 있는 간선의 가중치의 합을 줄여나가는 연산이다. <br><br>
+
+
+## 다익스트라
+다익스트라 알고리즘은 하나의 노드에서 다른 모든 노드까지의 최단 경로를 구하는 알고리즘이다. 이 때 간선들은 모두 양의 간선들만을 가져야 한다. <br>
+
+BFS의 진행방식과 상당히 유사하다. BFS에서 큐를 사용한다면 다익스트라 알고리즘에서는 우선순위 큐를 이용하여 greedy하게 노드를 뽑아낸다. 다익스트라 알고리즘의 수행과정은 다음과 같다.
+
+1. 모든 노드의 최단거리를 <acronym title="연산을 수행하면서 나올 수 없을 정도의 큰 값">INF</acronym>로 설정한다. 그리고 시작 노드를 0으로 초기화 한다.
+2. 시작 노드와 연결된 노드와의 거리에 대하여 edge relaxation을 수행한다.
+3. 위 과정을 모든 노드에 대해서 greedy하게 수행한다.
+
+### 시간복잡도
+다익스트라 알고리즘은 내부적으로 어떠한 자료구조를 쓰는 지에 따라 달라진다. 배열의 경우 $O(V^2)$, 이진 힙에서는 $O(ElogV)$이다. <br> <br>
+위의 상황에서는 시작 노드 하나에 대한 최단경로만 알려준다. 모든 노드에 대하여 최단경로를 찾으려면 노드의 개수만큼 반복하면 된다. 따라서 배열의 경우 $O(V^3)$, 이진 힙에서는 $O(VElogV)$이다.
+<br><br>
+
+<details>
+
+<summary p style="cursor:pointer">[1753번: 최단경로]</summary>
+<div markdown="1">
+
+<br>
+
+<https://www.acmicpc.net/problem/3197>
+
+<br>
+
+가장 기본적인 형태의 다익스트라 알고리즘의 형태이다. 우선순위 큐를 사용한 다익스트라 알고리즘으로 해결해보자. <br>
+
+<details>
+<summary p style="cursor:pointer">코드</summary>
+<div markdown="1">
+
+```java
+import java.io.*;
+import java.util.*;
+
+public class Main {
+
+	static FastIO io = new FastIO();
+	final static int INF = Integer.MAX_VALUE;
+	static int V, E, K, u, v, w;
+	static ArrayList<ArrayList<Node>> adj;
+	static int[] weights;
+	
+	public static void main(String... args) throws IOException {
+		V = io.nextInt();
+		E = io.nextInt();
+		K = io.nextInt();
+		adj = new ArrayList<ArrayList<Node>>(V + 1);
+		for (int i = 0; i < V + 1; i++) {
+			adj.add(new ArrayList<Node>());
+		}
+		weights = new int[V + 1];
+		Arrays.fill(weights, INF);
+		StringBuilder res = new StringBuilder();
+		
+		for (int i = 0; i < E; i++) {
+			u = io.nextInt();
+			v = io.nextInt();
+			w = io.nextInt();
+			adj.get(u).add(new Node(v, w));
+		}
+		
+		dijkstra();
+		
+		for (int i = 1; i < V + 1; i++) {
+			res.append(weights[i] != INF ? weights[i] : "INF").append('\n');
+		}
+		
+		io.write(res);
+	}
+	
+	private static void dijkstra() {
+		PriorityQueue<Node> pq = new PriorityQueue<Node>();
+		pq.add(new Node(K, 0));
+		weights[K] = 0;
+		
+		while (!pq.isEmpty()) {
+			Node tmp = pq.poll();
+			int cur = tmp.idx;
+			int curWeight = tmp.weight;
+			
+			if (curWeight > weights[cur])
+				continue;
+			
+			for (Node n : adj.get(cur)) {
+				int next = n.idx;
+				int nextWeight = n.weight;
+				
+				if (weights[next] > weights[cur] + nextWeight) {
+					weights[next] = weights[cur] + nextWeight;
+					pq.add(new Node(next, weights[next]));
+				}
+			}
+		}
+	}
+	
+}
+
+class Node implements Comparable<Node>{
+	int idx, weight;
+
+	public Node(int idx, int weight) {
+		this.idx = idx;
+		this.weight = weight;
+	}
+
+	@Override
+	public int compareTo(Node o) {
+		// TODO Auto-generated method stub
+		return this.weight - o.weight;
+	}
+	
+}
+
+class FastIO { ... }    // 생략
+```
+
+</div>
+</details>
+
+<br>
+
+</div>
+</details>
+
+<br>
+
+<details>
+<summary p style="cursor:pointer">[9370번: 미확인 도착지]</summary>
+<div markdown="1">
+
+<br>
+
+<https://www.acmicpc.net/problem/9370>
+
+<br>
+최단거리와 g, h를 거쳐 가는 최단거리를 비교해서 목적지 후보들을 추려내자.
+
+<details>
+<summary p style="cursor:pointer">코드</summary>
+<div markdown="1">
+
+```java
+import java.io.*;
+import java.util.*;
+
+public class Main {
+
+    static FastIO io = new FastIO();
+    final static int INF = Integer.MAX_VALUE;
+    static List<List<Node>> adj;
+    static List<Integer> dest;
+    static int[] dists;
+    static int n, m, t, s, g, h, a, b, d;
+
+    public static void main(String... args) throws IOException {
+        int T = io.nextInt();
+        StringBuilder res = new StringBuilder();
+        while (T-- > 0) {
+            n = io.nextInt();   m = io.nextInt();   t = io.nextInt();
+            adj = new ArrayList<>();
+            for (int i = 0; i < n + 1; i++) {
+                adj.add(new ArrayList<>());
+            }
+            dest = new ArrayList<>();
+            dists = new int[n + 1];
+            s = io.nextInt();   g = io.nextInt();   h = io.nextInt();
+            for (int i = 0; i < m; i++) {
+                a = io.nextInt();   b = io.nextInt();   d = io.nextInt();
+                adj.get(a).add(new Node(b, d));
+                adj.get(b).add(new Node(a, d));
+            }
+            for (int i = 0; i < t; i++) {
+                dest.add(io.nextInt());
+            }
+            Collections.sort(dest);
+
+            for (Integer i : dest) {
+                int d1 = dijkstra(s, i);
+                if (d1 == INF)
+                    continue;
+                int d2 = dijkstra(s, g) + dijkstra(g, h) + dijkstra(h, i);
+                int d3 = dijkstra(s, h) + dijkstra(h, g) + dijkstra(g, i);
+                if (d1 == Math.min(d2, d3))
+                    res.append(i).append(' ');
+            }
+
+            res.append('\n');
+        }
+
+        io.write(res);
+    }
+
+    private static int dijkstra(int s, int e) {
+        Arrays.fill(dists, INF);
+        PriorityQueue<Node> pq = new PriorityQueue<>();
+        pq.add(new Node(s, dists[s] = 0));
+
+        while (!pq.isEmpty()) {
+            Node tmp = pq.poll();
+            int cur = tmp.idx;
+            int curDist = tmp.dist;
+
+            if (curDist > dists[cur])
+                continue;
+
+            for (Node n : adj.get(cur)) {
+                int next = n.idx;
+                int nextDist = n.dist;
+                if (dists[next] > dists[cur] + nextDist)
+                    pq.add(new Node(next, dists[next] = dists[cur] + nextDist));
+            }
+        }
+
+        return dists[e];
+    }
+}
+
+class Node implements Comparable<Node> {
+    int idx, dist;
+
+    public Node(int idx, int dist) {
+        this.idx = idx;
+        this.dist = dist;
+    }
+
+    @Override
+    public int compareTo(Node node) {
+        return this.dist - node.dist;
+    }
+}
+
+class FastIO { ... }    // 생략
+```
+
+</div>
+</details>
+
+</div>
+</details>
+
+<br>
+<br>
+
+## 벨만 포드
+
+$$
+D(s, v) = D(s, u) + w(u, v)
+$$
+
+벨만 포드 알고리즘은 $s, u$ 사이의 최단경로를 구할 때 그래프 내 모든 간선에 대해 edge relaxation을 수행한다. $s, u$ 사이의 최단경로는 $s, u$만 있을 수 있고, 또는 그래프의 모든 노드($V-1$개)가 $s, u$의 최단경로를 구성할 수도 있다. 따라서 벨만 포드 알고리즘은 모든 간선에 대해 $V-1$회의 edge relaxation을 수행한다. <br>
+또한 다익스트라 알고리즘은 음의 가중치가 있는 간선이 있을 경우 원하는 결과가 나오지 않지만 벨만 포드 알고리즘은 시작 노드에서 도달 가능한 음의 사이클이 없는 경우 음의 가중치 간선이 있어도 최단경로를 구할 수 있다. <br><br>
+
+다음의 예를 보자. <br>
+
+![](https://i.imgur.com/hcWT22F.png){: .align-center}
+
+<br>
+노드 하나 당 모든 간선에 대해 edge relaxation을 수행한다. 이렇게 비효율적으로 수행하는 이유는 음의 싸이클의 유무를 확인하기 위해서이다. <br>
+
+### 음의 싸이클
+음의 싸이클이 있으면 N번째 노드에서도 edge relaxation이 발생한다. 즉, 음의 싸이클의 유무를 확인하려면 N번째 노드에서 edge relaxation이 일어나는지를 확인하여 처리한다.
+
+### 시간복잡도
+$V-1$개의 노드에서 모든 간선에 대해 edge ralaxation을 하므로 $O(VE)$이다.
+
+<br>
+
+<details>
+<summary p style="cursor:pointer">[11657번: 타임머신]</summary>
+<div markdown="1">
+
+<br>
+
+<https://www.acmicpc.net/problem/11657>
+
+<br>
+벨만포드 알고리즘의 기본 문제이다. 간선 정보를 입력 받고 모든 노드에서 edge relaxation을 수행한다. 만약 N번째 노드에서도 edge relaxation으로 최단경로가 갱신된다면 음의 싸이클이 있다는 것이다.
+
+<br>
+
+<details>
+<summary p style="cursor:pointer">코드</summary>
+<div markdown="1">
+
+```java
+import java.io.*;
+import java.util.*;
+
+public class Main {
+
+    static FastIO io = new FastIO();
+    final static int INF = Integer.MAX_VALUE;
+    static int N, M;
+    static List<Edge> edges;
+    static int[] costs;
+
+    public static void main(String... args) throws IOException {
+    	N = io.nextInt();	M = io.nextInt();
+    	edges = new ArrayList<Edge>();
+    	costs = new int[N + 1];
+    	Arrays.fill(costs, INF);
+    	StringBuilder res = new StringBuilder();
+    	for (int i = 0; i < M; i++) {
+    		edges.add(new Edge(io.nextInt(), io.nextInt(), io.nextInt()));
+		}
+    	
+    	if (bellman())
+    		io.write(-1);
+    	else {
+    		for (int i = 2; i < N + 1; i++) {
+				res.append(costs[i] == INF ? -1 : costs[i]).append('\n');
+			}
+    		io.write(res);
+    	}
+    }
+    
+    private static boolean bellman() {
+    	boolean negCycle = false;
+    	costs[1] = 0;
+    	
+    	for (int i = 1; i < N + 1; i++) {
+			for (Edge e : edges) {
+				int cur = e.n1;
+				int next = e.n2;
+				int cost = e.cost;
+				if (costs[cur] == INF)
+					continue;
+				if (costs[next] > costs[cur] + cost) {
+					costs[next] = costs[cur] + cost;
+					if (i == N)
+						negCycle = true;
+				}
+			}
+		}
+    	
+    	return negCycle;
+    }
+    
+}
+
+class Edge {
+	int n1, n2, cost;
+
+	public Edge(int n1, int n2, int cost) {
+		this.n1 = n1;
+		this.n2 = n2;
+		this.cost = cost;
+	}
+}
+
+class FastIO { ... }	// 생략
+```
+
+</div>
+</details>
+
+
+</div>
+</details>
+
+<br>
+<br>
+
+## 플로이드 와샬
+플로이드 와샬 알고리즘은 모든 최단경로를 구하는 방법이다. 음수 싸이클만 없다면 음의 가중치를 가지는 간선도 사용 가능하다.<br>
+
+모든 노드에 대한 경로를 2차원 배열에 저장한다. 마찬가지로 optimal substructure의 개념을 이용한다. 다익스트라 알고리즘은 가장 적은 비용을 하나씩 선택하는 방법이었다면 플로이드 와샬 알고리즘은 **거쳐가는 노드**를 기준으로 다이나믹 프로그래밍을 통해 최단경로를 갱신한다.<br><br>
+
+2차원 배열 dp에 두 노드 간의 비용을 초기화한다. 노드 간에 연결이 없다면 INF로 초기화한다. <br>
+그 후 3중 for문으로 거쳐가는 노드들로 최단경로를 dp에 저장한다. 코드가 굉장히 짧고 간결하다.<br>
+
+``` java
+for (int k = 0; k < N; k++) {
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            dp[i][j] = Math.max(dp[i][j], dp[i][k] + dp[k][j]);
+        }
+    }
+}
+```
+<br>
+첫 번째 for문은 거쳐가는 노드들을 의미하고 두 번째 for문은 시작 노드들, 세 번째 for문은 도착 노드를 의미한다. 즉, $dp_{ij}$와 $dp_{ik}+dp_{kj}$의 값 중 최소값으로 $dp_{ij}$를 갱신한다.
+
+### 시간복잡도
+매번 노드들의 조합에 대해서 현재까지의 최단 경로를 구해야 하고 총 $V-1$번 반복해야 하므로 $O(V^3)$이다.
+
+<br>
+
+<details>
+<summary p style="cursor:pointer">[11404번: 플로이드]</summary>
+<div markdown="1">
+
+<br>
+
+<https://www.acmicpc.net/problem/11404>
+
+<br>
+플로이드 와샬 알고리즘의 기본 문제이다. 다익스트라 알고리즘을 $V$번 돌려도 가능하지만 훨씬 간단한 플로이드 와샬 알고리즘으로 풀어보자.
+
+<br>
+
+<details>
+<summary p style="cursor:pointer">코드</summary>
+<div markdown="1">
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+using namespace std;
+
+const int INF = 987654321;
+int n, m, a, b, c;
+vector<vector<int>> map;
+
+void init() {
+	cin >> n >> m;
+	for (int i = 0; i < n + 1; i++)
+	{
+		vector<int> row(n + 1, INF);
+		map.push_back(row);
+	}
+	for (int i = 1; i < n + 1; i++)
+	{
+		map[i][i] = 0;
+	}
+
+	for (int i = 0; i < m; i++)
+	{
+		cin >> a >> b >> c;
+		map[a][b] = min(map[a][b], c);
+	}
+}
+
+void floyd() {
+	for (int k = 1; k < n + 1; k++)
+	{
+		for (int i = 1; i < n + 1; i++)
+		{
+			for (int j = 1; j < n + 1; j++)
+			{
+				if (i == j)
+					continue;
+				map[i][j] = min(map[i][j], map[i][k] + map[k][j]);
+			}
+		}
+	}
+}
+
+void print() {
+	for (int i = 1; i < n + 1; i++)
+	{
+		for (int j = 1; j < n + 1; j++)
+		{
+			cout << (map[i][j] == INF ? 0 : map[i][j]) << ' ';
+		}
+		cout << '\n';
+	}
+}
+
+int main() {
+	ios_base::sync_with_stdio(false);
+	cin.tie(NULL);
+	init();
+	floyd();
+	print();
+	return 0;
+}
+```
+
+
+</div>
+</details>
+
+</div>
+</details>
+
+<br><br>

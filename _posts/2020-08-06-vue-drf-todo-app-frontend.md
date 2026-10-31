@@ -1,0 +1,388 @@
+---
+title: "Vue.js와 DRF로 TODO 앱 만들기 - Frontend"
+description: "vue.js와 djangorestframework를 연동하여 간단한 todo app을 만들어 보자"
+toc: true
+categories: [Web]
+tags: [web, django, python, vue.js, axios, vue-cli 4]
+math: true
+lang: ko
+redirect_from:
+  - "/web/62/"
+---
+
+## Frontend
+[이전 포스트](/posts/vue-drf-todo-app-rest-api/)에서 DRF로 REST API를 만들어 헤로쿠로 배포했다. 이번 포스트에서는 Vue.js에서 권고하는 HTTP 통신 라이브러리인 axios로 통신하는 방법에 대해 정리한다. 
+
+### 개발환경 구축
+django 폴더 내에서 `frontend`라는 Vue.js 프로젝트를 생성한다. 
+
+```
+(venv) C:\Users\sys09\projects\vue-drf-todo-app>vue create frontend
+```
+
+프로젝트의 옵션을 선택할 수 있는데 다음과 같이 설정했다.
+
+```
+? Check the features needed for your project: Babel, Router, CSS Pre-processors
+? Use history mode for router? (Requires proper server setup for index fallback in production) No
+? Pick a CSS pre-processor (PostCSS, Autoprefixer and CSS Modules are supported by default): Sass/SCSS (with node-sass)
+? Where do you prefer placing config for Babel, ESLint, etc.? In package.json
+? Save this as a preset for future projects? (y/N) No
+```
+
+프로젝트 생성 후 프로젝트 구조는 다음과 같다.
+
+![]({{ site.url }}/assets/images/62-1.png){: .align-center}
+
+`frontend` 폴더로 이동하여 API 통신을 위한 axios와 CSS 프레임워크 bulma를 설치한다. 
+
+```
+C:\Users\sys09\projects\vue-drf-todo-app>cd frontend
+C:\Users\sys09\projects\vue-drf-todo-app\frontend>npm install axios
+C:\Users\sys09\projects\vue-drf-todo-app\frontend>npm install bulma
+```
+
+### Vue 개발
+
+CSS는 bulma로 처리하므로 `App.vue`의 CSS는 다음과 같이 수정한다.
+
+```vue
+// frontend/src/App.vue
+<template>
+  <div id="app">
+    <router-view/>
+  </div>
+</template>
+
+<style lang="scss">
+@import '../node_modules/bulma';
+</style>
+```
+
+이제 `Home.vue`를 간단히 수정한 후 테스트해보자. 간단히 내비게이션 바 하나만 추가한 상태이다.
+
+```vue
+// frontend/src/views/Home.vue
+<template>
+  <div class="home">
+    <nav class="navbar is-primary" role="navigation" aria-label="main navigation">
+      <div class="navbar-brand">
+        <a class="navbar-item">
+          Vue django todo app
+        </a>
+      </div>
+    </nav>
+  </div>
+</template>
+
+<script>
+
+export default {
+  name: 'Home',
+  created() {
+    document.title = 'Vue-Django TODO App';
+  },
+}
+</script>
+
+<style lang="scss">
+</style>
+```
+
+다음과 같은 화면이 나오는지 확인하자.
+
+![]({{ site.url }}/assets/images/62-2.png){: .align-center}
+
+이제 TODO 앱에 필요한 레이아웃들을 만들어야 한다. 할 일을 입력하는 텍스트를 입력할 수 있어야 하고  `TODO`, `DONE`을 선택하는 레이아웃이 있어야 한다. 또한 `TODO` 리스트와 `DONE` 리스트를 만들어서 화면에 보여주도록 해야한다.  
+
+레이아웃과 CSS에 대한 설명은 코드를 보면 충분히 이해할 수 있으니 생략한다.
+
+```vue
+// frontend/src/views/Home.vue
+<template>
+  <div class="home">
+    <nav class="navbar is-primary" role="navigation" aria-label="main navigation">
+      <div class="navbar-brand">
+        <a class="navbar-item">
+          Vue django todo app
+        </a>
+      </div>
+    </nav>
+
+    <hr>
+
+    <div class="columns">
+      <div class="column is-3 is-offset-3">
+        <form>
+          <h2 class="subtitle">Add task</h2>
+
+          <div class="field">
+            <label class="label">Description</label>
+            <div class="control">
+              <input class="input is-primary" type="text">
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label">Status</label>
+            <div class="control">
+              <div class="select is-primary">
+                <select>
+                  <option value="todo">To do</option>
+                  <option value="done">Done</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="control">
+              <button class="button is-success">Submit</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="columns">
+      <div class="column is-4 is-offset-1">
+        <h2 class="subtitle" align="center">To do</h2>
+        <div class="todo">
+          <div class="card">
+            <div class="card-content">
+            </div>
+            <footer class="card-footer">
+              <a class="card-footer-item">Done</a>
+            </footer>
+          </div>
+        </div>
+      </div>
+
+      <div class="column is-4 is-offset-2">
+        <h2 class="subtitle" align="center">Done</h2>
+        <div class="done">
+          <div class="card">
+            <div class="card-content">
+            </div>
+            <footer class="card-footer">
+              <a class="card-footer-item">Cancel</a>
+            </footer>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+
+export default {
+  name: 'Home',
+  created() {
+    document.title = 'Vue-Django TODO App';
+  },
+}
+</script>
+
+<style lang="scss">
+.select, select {
+  width: 100%;
+}
+.card {
+  margin-bottom: 20px;
+}
+.done {
+  opacity: 0.3;
+}
+</style>
+```
+
+`http://localhost:8080/`에서 지금까지의 작업을 확인해보자. 
+
+![]({{ site.url }}/assets/images/62-3.png){: .align-center}
+
+본격적으로 API를 가져와서 프론트엔드에서 처리한다. axios로 데이터들을 가져와 화면에 뿌려준다. 
+
+```vue
+// frontend/src/views/Home.vue
+// 상단 생략
+
+    <div class="columns">
+      <div class="column is-4 is-offset-1">
+        <h2 class="subtitle" align="center">To do</h2>
+        <div class="todo">
+          <div class="card" v-for="task in tasks" v-if="task.status === 'todo'" v-bind:key="task.id">
+            <div class="card-content">
+              {% raw %}{{ task.description }}{% endraw %}
+            </div>
+            <footer class="card-footer">
+              <a class="card-footer-item">Done</a>
+            </footer>
+          </div>
+        </div>
+      </div>
+
+      <div class="column is-4 is-offset-2">
+        <h2 class="subtitle" align="center">Done</h2>
+        <div class="done">
+          <div class="card" v-for="task in tasks" v-if="task.status === 'done'" v-bind:key="task.id">
+            <div class="card-content">
+              {% raw %}{{ task.description }}{% endraw %}
+            </div>
+            <footer class="card-footer">
+              <a class="card-footer-item">Cancel</a>
+            </footer>
+          </div>
+        </div>
+      </div>
+    </div>
+
+// 하단 생략
+
+<script>
+import axios from 'axios'
+
+const API_URL = 'https://vue-drf-todo.herokuapp.com/api/'
+const USERNAME = 'admin'
+const PASSWORD = 'sys960927'
+
+export default {
+  name: 'Home',
+  created() {
+    document.title = 'Vue-Django TODO App';
+  },
+  data() {
+    return {
+      tasks: [],
+      description: '',
+      status: 'todo'
+    }
+  },
+  mounted() {
+    this.getTasks()
+  },
+  methods: {
+    getTasks() {
+      axios({
+        method: 'get',
+        url: API_URL + 'tasks/',
+        auth: {
+          username: USERNAME,
+          password: PASSWORD
+        }
+      }).then(response => this.tasks = response.data)
+    }
+  }
+}
+</script>
+// 하단 생략
+```
+
+우선 django의 설정에 약간의 변경사항이 있다. API URL을 `https://vue-drf-todo.herokuapp.com/api/`로 수정하였고 `settings.py`의 화이트리스트를 추가하였다. 
+
+```py
+# settings.py
+# 상단 생략
+CORS_ORIGIN_WHITELIST = [
+    'https://vue-drf-todo.herokuapp.com/',
+    'http://localhost:8080/',
+    'http://127.0.0.1:8080/'
+]
+# 하단 생략
+```
+
+데이터를 가져와 `TODO` 리스트, `DONE` 리스트에 넣어주어야 한다. 일반적으로 이벤트를 발생시켜서 데이터를 가져오는 것보다는 페이지 로드 시 데이터를 가져와야 하므로 데이터를 가져오는 함수 `getTask()`는 `mounted`로 처리하는 것이 좋다.  
+axois로 API 서버에 GET 리퀘스트를 던지고 리스폰스를 리스트로 받아오며, `TODO`와 `DONE`을 구분하며 레이아웃 하단에 위치시킨다.  
+
+현재 API 서버에는 3개의 `TODO`와 1개의 `DONE`이 있고 결과는 다음과 같다. 
+
+![]({{ site.url }}/assets/images/62-4.png){: .align_center}
+
+다음으로 할 일을 추가하는 함수 `addTask()`를 정의한다. `description`과 `status`, 그리고 유저 정보를 POST로 보내며 POST 후 초기화를 해주어야 한다. 
+
+```js
+addTask() {
+    if (this.description) {
+    axios({
+        method: 'post',
+        url: API_URL + "tasks/",
+        data: {
+        description: this.description,
+        status: this.status
+        },
+        auth: {
+        username: USERNAME,
+        password: PASSWORD
+        }
+    }).then((response) => {
+        let newTask = {
+        'id': response.data.id,
+        'description': this.description,
+        'status': this.status
+        }
+        this.tasks.push(newTask)
+        this.description = ''
+        this.status = 'todo'
+    }).catch((error) => {
+        console.log(error)
+    })
+    }
+}
+```
+
+폼 태그에서 `description`과 `status`를 정의하고 폼에 `v-on:submit.prevent="addTask"`를 추가한다.  
+
+(블로그 글 쓰기, `TODO`)를 하나 추가해보면 `TODO` 리스트 하단에 다음과 같이 추가된다. 
+
+![]({{ site.url }}/assets/images/62-5.png){: .align-center}
+
+다음으로 `TODO` 리스트에서 `DONE` 리스트로, `DONE` 리스트에서 `TODO` 리스트로 옮기는 기능을 추가한다. 
+taskId에 해당하는 task에 status를 세팅하는  `setStatus(taskId, status)` 함수를 정의하자. 
+
+```js
+setStatus(taskId, status) {
+    const task = this.tasks.filter(task => task.id === taskId)[0]
+    axios({
+    method: 'patch',
+    url: API_URL + 'tasks/' + taskId + '/',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    data: {
+        status: status
+    },
+    auth: {
+        username: USERNAME,
+        password: PASSWORD
+    }
+    }).then(() => {
+    task.status = status
+    })
+}
+```
+
+`TODO` 리스트와 `DONE` 리스트의 푸터에 해당 함수를 달아준다. 
+
+```vue
+// 상단 생략
+<footer class="card-footer">
+    <a class="card-footer-item" @click="setStatus(task.id, 'done')">Done</a>
+</footer>
+// 중단 생략
+<footer class="card-footer">
+    <a class="card-footer-item" @click="setStatus(task.id, 'todo')">Cancel</a>
+</footer>
+// 하단 생략
+```
+
+(잘 되는지 테스트하기, `TODO`)의 푸터의 Done을 누르면 `DONE` 리스트로 옮겨지는지 확인해보자.
+
+![]({{ site.url }}/assets/images/62-6.png){: .align-center}
+
+
+
+> 전체 소스코드는 [Github](https://github.com/sys09270883/vue-drf-todo-app)에서 확인할 수 있다.
+
+<br>

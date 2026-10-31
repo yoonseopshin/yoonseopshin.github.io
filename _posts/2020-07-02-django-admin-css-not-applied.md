@@ -1,0 +1,32 @@
+---
+title: "Django admin CSS 미적용 문제"
+description: "django에서 admin 페이지에 CSS 적용하기"
+toc: true
+categories: [Web]
+tags: [web, python, django]
+math: true
+lang: ko
+redirect_from:
+  - "/web/43/"
+---
+
+## 문제상황
+django에서 admin 페이지에 CSS가 미적용되는 상황이 발생했다. 정확히는 개발서버의 CSS를 적용한 후 admin 페이지의 CSS 적용되지 않는 상황이다.  
+[공식 문서](https://docs.djangoproject.com/en/2.1/howto/static-files/){: target="_blank"}에 의하면 DEBUG 모드일 때만 편의성을 위해 정적 파일들을 찾아준다. 즉, django에서는 개발의 편의성을 위해 static을 제공하는 것이기 때문에 웹 서버에서 처리하는 것이 좋다.  
+
+## 해결방법
+django에서는 정적 파일을 제공하는 상황에 따라 `static file`과 `media file`로 구분한다. 우리가 처리하는 CSS는 static file이며 `manage.py`의 `findstatic`과 `collectstatic`으로 정적 파일을 찾거나 모을 수 있다.  
+
+settings.py에서 `STATIC_URL = '/static/'` 밑에 `STATIC_ROOT`를 추가하여 해결한다.  
+
+>`STATIC_ROOT`는 django 프로젝트에서 사용하는 모든 정적 파일을 한 곳에 모아두는 경로이다. 그 후 `python manage.py collectstatic`로 STATIC_ROOT에 모든 정적 파일을 모은다. django가 모든 파일을 검사하는 것은 아니고 개발할 때 필요한 정적파일과 INSTALLED_APPS의 앱들과 관련된 정적파일들을 모두 찾아서 `STATIC_ROOT`에 모아준다.
+
+```python
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+```
+
+그 후 커맨드 라인에 `python manage.py collectstatic`을 입력하면 /static/ 폴더가 생성된다. 다시 서버를 돌려 admin 페이지에 접속하면 CSS가 정상적으로 적용되는 것을 확인할 수 있다.
+
+
+<br>

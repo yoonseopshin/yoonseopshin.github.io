@@ -1,0 +1,185 @@
+---
+title: "Django 모델"
+description: "django 모델에 대해서 자세히 알아보자"
+toc: true
+categories: [Web]
+tags: [web, django, python, model]
+math: true
+lang: ko
+redirect_from:
+  - "/web/56/"
+---
+
+## Django Model이란?
+모델이란 테이블을 정의하는 django의 클래스를 의미하며, `models.py`에 테이블 정보를 정의한다. 테이블 정보 뿐만 아니라 그 외에도 관련 변수 및 메소드를 추가적으로 정의할 수 있다. ORM 기반으로 테이블을 클래스로 정의하고 있기 때문에 클래스의 특징인 변수와 메소드를 가질 수 있기 때문이다.  
+
+이 포스트에서는 `Model` 클래스의 정의 방법과 `Manager` 클래스에 대해서 정리한다. 또한 django에서 제공하는 3가지 관계 모델에 대해서도 알아본다.
+
+## 모델 정의
+테이블을 클래스로 처리하는 ORM의 특징에 따라 모델 클래스는 속성과 메소드를 가진다. 테이블의 컬럼은 모델 클래스의 속성으로 정의하고 추가적으로 테이블에 관련된 메소드들을 정의한다. 이렇게 하면 테이블에 관련된 데이터와 행위를 모델 클래스 한 곳에서 처리할 수 있다. 예시로 블로그 앱에서 게시글을 관리하는 `Post`는 다음과 같이 정의할 수 있다. 
+
+```py
+# blog/models.py
+
+# 모델 클래스
+class Post(models.Model):
+
+    # 모델 속성
+    title = models.CharField(verbose_name='TITLE', max_length=50)
+    slug = models.SlugField('SLUG', unique=True, allow_unicode=True, help_text='One word for title alias.')
+    description = models.CharField('DESCRIPTION', max_length=100, blank=True, help_text='Simple description text.')
+    content = MarkdownxField('CONTENT')
+    create_dt = models.DateTimeField('CREATE DATE', auto_now_add=True)
+    modify_dt = models.DateTimeField('MODIFY DATE', auto_now=True)
+    tags = TaggableManager(blank=True)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
+
+    # 내부의 Meta 클래스
+    class Meta:
+        # Meta 클래스 속성
+        verbose_name = 'post'
+        verbose_name_plural = 'posts'
+        db_table = 'blog_posts'
+        ordering = ('-modify_dt',)
+
+    # 모델 메소드
+    def __str__(self):
+        return self.title
+
+    def get_absolute_url(self):
+        return reverse('blog:post_detail', args=(self.slug,))
+
+    def get_previous(self):
+        return self.get_previous_by_modify_dt()
+
+    def get_next(self):
+        return self.get_next_by_modify_dt()
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.title, allow_unicode=True)
+        super().save(*args, **kwargs)
+
+    def formatted_markdown(self):
+        return markdownify(self.content)
+```
+
+## 모델 속성
+테이블의 컬럼은 모델 클래스의 속성으로 정의한다. django에서는 테이블의 컬럼을 테이블의 필드 또는 모델의 필드라고 하는데, 결국 모델의 필드들은 모델 클래스의 속성으로 정의되고 모델 클래스의 속성들은 테이블의 컬럼으로 1:1 매핑된다.  
+
+모델 클래스의 속성 중 모델 필드는 가장 중요하며 필수이다. 컬럼으로 테이블을 정의하는 것처럼 모델 필드로 모델 클래스로 정의한다.  
+
+`Post` 모델을 보면 8개의 모델 필드가 있다. 모델 클래스에서 필드를 정의하기 위해서는 항상 필드명, 필드 타입, 필드 옵션을 정해주어야 한다.  
+
+각 필드는 용도에 따라 적절한 타입을 지정해야 하는데, 필드 타입의 역할은 다음과 같다.
+- 테이블의 컬럼 타입을 지정
+    예를 들어 CharField 필드 타입은 컬럼의 VARCHAR로 변환된다. django가 기본적으로 제공하는 [User](https://docs.djangoproject.com/en/3.0/ref/contrib/auth/) 모델은 MySQL로 다음과 같이 변환된다.  
+
+![]({{ site.url }}/assets/images/53-1.png ){: .align-center}
+
+- 폼으로 렌더링되는 경우 HTML 위젯을 지정
+    예를 들어 CharField 필드 타입은 폼으로 사용될 때 \<input="text"\> HTML 태그로 변환되고 그에 상응하는 위젯을 지정한다.
+- 필드 또는 폼에 대한 유효성 검사 시 최소 기준
+
+또한 각 필드는 필드 타입에 따른 부가적인 옵션을 지정할 수 있다. 예를 들어 CharField 필드 타입은 `max_length` 인자가 필수인데 이는 테이블을 생성할 때 VARCHAR 타입 컬럼의 최대 길이를 지정한다. 
+
+모델 속성과 관련해서 필드 이외에도 Meta 클래스 및 Manager 속성에 대한 이해가 필요하다.
+
+
+## 모델 메소드
+테이블에는 메소드가 없지만 모델 클래스에는 메소드를 정의할 수 있다. 여기서 주의할 점은 클래스 메소드와 객체 메소드를 구분하는 것이다. 클래스 메소드는 테이블 레벨에서 동작하는 메소드이고 객체 메소드는 레코드 레벨에서 동작하는 메소드이다. django에서는 클래드 메소드를 사용하지 않고 객체 메소드만 사용한다. 즉, 모델 클래스에 정의하는 메소드는 모두 객체 메소드이도 항상 `self` 인자를 갖고 있으며, 이 메소드는 레코드 단위에만 영향을 미친다.  
+
+테이블의 모든 레코드 수를 카운트하는 것처럼 테이블 레벨의 동작을 처리하는 것도 분명 필요하다. django는 클래스 메소드를 사용하는 방법 대신에 별도로 `Manager` 클래스를 정의하고 `Manager` 클래스의 메소드를 통해서 테이블에 대한 CRUD 동작을 수행한다. 
+
+우선 레코드 레벨에서 동작하는 객체 메소드에 대해 더 알아보자. django의 모델 메소드는 모두 객체 메소드이므로 django의 모델 클래스에서 많이 사용하는 모델 메소드들 위주로 정리한다.  
+
+### \_\_str\_\_()
+객체의 문자열 표현을 리턴한다. Java의 toString()과 비슷한 역할을 한다. 객체는 모두 파이썬의 내부 포맷으로 저장되므로 우리가 읽을 수 없다. 따라서 이런 객체를 읽을 수 있는 문자열로 표현하고자 할 때 다음 메소드를 정의한다.  
+
+`__str__()`을 오버라이딩하지 않으면 django의 디폴트 `__str__()`에 의해 객체의 문자열이 표현되므로 웬만하면 `__str__()`은 오버라이딩하자.
+
+> `__str__()`은 Python 3에서 사용하며 Python 2에서는 `__unicode__()`를 사용한다.
+
+### get_absolute_url()
+자신이 정의된 객체를 지칭하는 URL을 반환하는 메소드이다. 예를 들어 URLconf에서 제네릭 뷰 중 하나인 DetailView를 사용하는 경우이다. DetailView는 특정 객체에 대한 상세 정보를 보여주는 제네릭 뷰이므로, DetailView와 매핑된 URL을 `get_absolute_url()` 메소드를 사용해 구할 수 있다.  
+
+이 메소드는 템플릿에서도 자주 사용한다. URL을 표현하기 위해 하드 코딩을 하지 않아도 된다.  
+> 템플릿에서의 사용 예시: <https://github.com/sys09270883/django-blog/blob/master/mysite/blog/templates/blog/post_all.html>
+
+### get_next_by_FOO(**kwargs)
+필드 타입이 DateField 또는 DateTimeField면서 필드 옵션이 `null=True`가 아닌 경우에는 이 메소드를 사용할 수 있다. FOO 자리에는 필드명이 들어가면 되고, 필요하면 키워드 인자를 딕셔너리 형식으로 전달할 수 있다. 위에서 예시로 든 `Post` 클래스의 `get_next()`는 다음과 같이 정의되어 있다. 
+
+```py
+    def get_next(self):
+        return self.get_next_by_modify_dt()
+```
+
+`get_next()`는 `modify_dt`라는 DateTimeField를 기준으로 다음 객체를 반환한다. 다음 객체가 없는 경우에는 `DoesNotExist` 익셉션을 발생시킨다.
+
+### get_previous_by_FOO(**kwargs)
+`get_next_by_FOO(**kwargs)`와 다른 점은 이전 객체를 반환한다는 점이다. 나머지는 모두 동일하다.
+
+### get_FOO_display()
+필드 옵션에 `choices` 인자가 있으면, 그 모델 객체는 아래 메소드를 제공한다. FOO는 `chioces` 인자를 갖는 필드를 의미한다. 이 메소드는 FOO 필드의 설명 문자열을 반환한다.
+
+## Meta 클래스 속성
+모델 클래스 내부에 Meta 클래스를 정의하여 메타데이터를 정의할 수 있다. django에서는 모델 클래스의 필드는 아니지만 모델 클래스에 필요한 항목을 Meta 클래스에 정의한다. 즉 필드는 모델 클래스의 속성으로, 필드 이외 항목은 Meta 클래스의 속성으로 정의해 모델의 필드 속성과 그 외 속성을 구분하고 있다. django는 Meta 내부 클래스 속성으로 사용할 수 있는 항목들을 정의하고 있는데 그 중 많이 사용하는 항목들은 다음과 같다. 
+
+### ordering
+모델 객체의 리스트 출력 시 정렬하기 위해 사용하는 필드 명을 지정한다. 지정한 필드명을 기준으로 오름차순이 디폴트이고, 마이너스 접두사를 붙이면 내림차순으로 정렬한다. DB에 저장하는 순서를 의미하는 것은 아니고 DB에서 가져온 데이터를 출력할 때의 순서에 영향을 준다. 예를 들어 `Post` 클래스의 Meta 클래스에서는 `modify_dt`를 기준으로 내림차순으로 정렬한다. 
+
+```py
+# 내부의 Meta 클래스
+class Meta:
+    # Meta 클래스 속성
+    ordering = ('-modify_dt',)
+```
+
+### db_table
+데이터베이스에 저장되는 테이블 이름을 지정한다. 이 항목을 지정하지 않으면 django는 디폴트로 앱명_클래스명(소문자)을 테이블명으로 지정한다. 예를 들어 `Post` 클래스는 블로그 앱에 속해있는데 디폴트 테이블명은 `blog_post`가 될 것이다. 이런 디폴트 테이블명을 변경하고 싶으면 `db_table` 메타 항목을 지정한다.
+
+```py
+# 내부의 Meta 클래스
+class Meta:
+    # Meta 클래스 속성
+    verbose_name = 'post'
+```
+
+### verbose_name
+사용자가 이해하기 쉬운 모델 객체의 별칭이다. 이 항목을 지정하지 않으면 django는 모델 클래스 명을 변형해서 디폴트 `verbose_name`으로 사용한다. 예를 들어 모델 클래스 명이 `HotPost`라면 디폴트 `verbose_name`은 `hot post`가 된다. 디폴트 별칭을 변경하고 싶으면 `verbose_name` 메타 항목을 지정한다.
+
+```py
+# 내부의 Meta 클래스
+class Meta:
+    # Meta 클래스 속성
+    verbose_name = 'post'
+```
+
+### verbose_name_plural
+`verbose_name`에 대한 복수 명칭을 지정한다. 지정하지 않으면 디폴트로 `verbose_name` + `'s'`가 사용된다. 
+
+```py
+# 내부의 Meta 클래스
+class Meta:
+    # Meta 클래스 속성
+    verbose_name_plural = 'posts'
+```
+
+### 기타
+그 외의 메타 항목들은 [공식문서](https://docs.djangoproject.com/en/3.0/ref/models/options/)에서 확인할 수 있다.
+
+## Manager 속성
+모델 속성 중에서 예외적으로 필드로 매핑되지 않는 속성이 있는데 그것이 바로 `Manager` 속성이다. 모든 모델은 `Manager` 속성을 가져야 한다. 모델을 정의할 때 명시적으로 지정하지 않으면 django는 `Manager` 속성을 `objects`로 지정한다. 또한 `Manager` 속성은 모델 클래스를 통해서만 액세스할 수 있고 모델  객체를 통해서는 액세스할 수 없다.  
+
+`Manager` 속성은 `models.Manager` 타입으로 정의되므로 django의 `Manager` 클래스를 이해하는 것이 중요하다. `Manager` 클래스를 이용하여 데이터베이스 쿼리가 이루어지기 때문에 어렵지만 잘 이해해야 한다. 테이블 레벨에서의 동작은 `Manager` 클래스의 메소드를 통해 이루어진다.  
+
+예를 들어 모든 Post를 가져오는 쿼리인 `Post.objects.all()`는 `Post` 클래스에서 `objects`라는 `Manager` 속성을 접근하여 `Manager` 클래스의 메소드 `all()`을 호출하는 방식이다.
+
+```py
+Post.objects.all()
+```
+
+위 문장은 `QuerySet` 객체를 리턴한다. `QuertSet` 클래스의 메소드와 `Manager` 클래스의 메소드는 동일하게 사용할 수 있다. 그래서 `all()`, `filter()`, `exclude()`, `get()`, `count()`와 같은 `QuerySet` 메소드는 모두 `Manager` 메소드로도 사용 가능하다.  
+
+모델 클래스에서 `Manager` 속성을 여러 개 정의할 수 있고, 첫 번째로 정의된 `Manager` 속성을 디폴트 `Manager`라고 한다. 
+
+<br>
