@@ -7,7 +7,7 @@ categories: [PS]
 tags: [PS, 백준, BOJ, CPP, 산술 기하 평균, 1353번]
 math: true
 toc: false
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/31/"
 ---

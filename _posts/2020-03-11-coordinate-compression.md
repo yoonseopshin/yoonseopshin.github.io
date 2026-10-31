@@ -5,7 +5,7 @@ toc: true
 categories: [Algorithm]
 tags: [Algorithm, CPP, 좌표 압축]
 math: true
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/algorithm/28/"
 ---

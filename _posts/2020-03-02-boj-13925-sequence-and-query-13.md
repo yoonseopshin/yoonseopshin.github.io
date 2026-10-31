@@ -7,7 +7,7 @@ categories: [PS]
 tags: [PS, 백준, BOJ, CPP, 수열과 쿼리 13, 세그먼트 트리, Lazy Propagation, 13925번]
 math: true
 toc: false
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/24/"
 ---

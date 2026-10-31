@@ -5,7 +5,7 @@ toc: true
 categories: [Web]
 tags: [web, django, python, vue.js, axios, vue-cli 4]
 math: true
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/web/62/"
 ---

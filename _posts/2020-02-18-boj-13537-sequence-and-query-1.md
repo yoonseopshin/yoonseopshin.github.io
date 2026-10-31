@@ -7,7 +7,7 @@ categories: [PS]
 tags: [PS, 13537번, 수열과 쿼리 1, 세그먼트 트리, 머지 소트 트리, JAVA]
 math: true
 toc: false
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/19/"
 ---

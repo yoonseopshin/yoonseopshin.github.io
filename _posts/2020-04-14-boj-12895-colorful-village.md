@@ -7,7 +7,7 @@ categories: [PS]
 tags: [PS, 12895번, 세그먼트 트리, Lazy Propagation, 비트 마스킹, CPP]
 math: true
 toc: false
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/36/"
 ---

@@ -5,7 +5,7 @@ toc: true
 categories: [Kotlin]
 tags: [kotlin]
 math: true
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/kotlin/76/"
 ---

@@ -7,7 +7,7 @@ categories: [PS]
 tags: [PS, 16975번, 수열과 쿼리 3, 세그먼트 트리, Lazy Propagation, JAVA]
 math: true
 toc: false
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/21/"
 ---

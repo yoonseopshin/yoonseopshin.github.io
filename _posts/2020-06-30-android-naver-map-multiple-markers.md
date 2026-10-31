@@ -5,7 +5,7 @@ toc: true
 categories: [App]
 tags: [app, android, kotlin, naver map]
 math: true
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/app/41/"
 ---

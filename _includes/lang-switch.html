@@ -1,0 +1,46 @@
+{% comment %}
+  Posts written in two languages share `ref`. English is the default
+  (/posts/<slug>/), Korean lives at /ko/posts/<slug>/.
+  This shows a link to the other version. On the English page it also adds a
+  banner that appears only for browsers whose first language is Korean (or
+  readers who chose Korean before). It never redirects.
+{% endcomment %}
+{% if page.ref %}
+  {% assign lang_other = site.posts | where: 'ref', page.ref | where_exp: 'p', 'p.url != page.url' | first %}
+  {% if lang_other %}
+    {% if page.lang contains 'ko' %}
+      <p class="lang-switch">
+        <a href="{{ lang_other.url | relative_url }}" hreflang="en" lang="en" data-lang-choice="en">Read in English</a>
+      </p>
+    {% else %}
+      <p class="lang-switch">
+        <a href="{{ lang_other.url | relative_url }}" hreflang="ko" lang="ko" data-lang-choice="ko">한국어로 읽기</a>
+      </p>
+      <div id="lang-banner" class="lang-banner" lang="ko" role="note" hidden>
+        <span>이 글은 한국어로도 있습니다.</span>
+        <a href="{{ lang_other.url | relative_url }}" hreflang="ko" data-lang-choice="ko">한국어로 읽기</a>
+        <button type="button" class="lang-banner-close" data-lang-choice="en" aria-label="Keep reading in English">English</button>
+      </div>
+    {% endif %}
+    <script>
+      (function () {
+        var KEY = 'lang-choice';
+        document.addEventListener('click', function (e) {
+          var el = e.target.closest ? e.target.closest('[data-lang-choice]') : null;
+          if (!el) { return; }
+          try { localStorage.setItem(KEY, el.getAttribute('data-lang-choice')); } catch (_) {}
+          if (el.tagName === 'BUTTON') {
+            var b = document.getElementById('lang-banner');
+            if (b) { b.hidden = true; }
+          }
+        });
+        var banner = document.getElementById('lang-banner');
+        if (!banner) { return; }
+        var saved = null;
+        try { saved = localStorage.getItem(KEY); } catch (_) {}
+        var first = (navigator.languages && navigator.languages[0]) || navigator.language || '';
+        if (saved === 'ko' || (saved === null && /^ko\b/i.test(first))) { banner.hidden = false; }
+      })();
+    </script>
+  {% endif %}
+{% endif %}

@@ -7,7 +7,7 @@ categories: [PS]
 tags: [PS, 16978번, 수열과 쿼리 22, 오프라인 쿼리, 세그먼트 트리, JAVA]
 math: true
 toc: false
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/17/"
 ---

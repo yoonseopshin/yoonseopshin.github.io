@@ -29,3 +29,18 @@ Old URLs such as `/ps/1/` or `/parallel%20programming/72/` are redirect pages ma
 - `tools/verify_content.py`: compares post bodies with the old repository.
 
 Other paths under this domain belong to other repositories (for example `/static-hosting/`). Do not add a top-level directory with the same name here.
+
+## Two languages
+
+English is the default. A post written in both languages is two files that share `ref`:
+
+| | English | Korean |
+|---|---|---|
+| `lang` | `en` | `ko-KR` (Korean UI) |
+| `permalink` | `/posts/<slug>/` | `/ko/posts/<slug>/` |
+| `hidden` | — | `true` (keeps it off the English front page) |
+
+- `_includes/metadata-hook.html` writes `hreflang` en / ko / x-default (→ English) on both pages; each page keeps its own canonical.
+- `_includes/lang-switch.html` shows a link to the other version. On the English page a banner offers the Korean version when the browser's first language is Korean. Nothing redirects automatically.
+- `/ko/` (`_tabs/ko.md`) lists Korean posts, including the 2019–2021 posts. `/ko/feed.xml` is the Korean feed.
+- `tools/verify_urls.py` fails CI if an hreflang set is not reciprocal or a page loses its self canonical.

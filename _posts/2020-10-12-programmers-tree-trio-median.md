@@ -7,7 +7,7 @@ categories: [PS]
 tags: [PS, 프로그래머스, 트리의 지름, CPP]
 math: true
 toc: false
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/74/"
 ---

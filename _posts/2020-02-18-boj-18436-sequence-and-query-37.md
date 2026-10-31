@@ -7,7 +7,7 @@ categories: [PS]
 tags: [PS, 18436번, 수열과 쿼리 37, 세그먼트 트리, JAVA]
 math: true
 toc: false
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/18/"
 ---

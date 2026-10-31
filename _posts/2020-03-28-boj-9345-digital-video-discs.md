@@ -7,7 +7,7 @@ categories: [PS]
 tags: [PS, 백준, BOJ, CPP, 세그먼트 트리, 9345번]
 math: true
 toc: false
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/29/"
 ---

@@ -5,7 +5,7 @@ toc: true
 categories: [Web]
 tags: [web, django, python]
 math: true
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/web/47/"
 ---

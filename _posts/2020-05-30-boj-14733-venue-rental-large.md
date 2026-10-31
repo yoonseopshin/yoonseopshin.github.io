@@ -7,7 +7,7 @@ categories: [PS]
 tags: [PS, 백준, 14733번, 세그먼트 트리, Plane Sweeping, Lazy Propagation, CPP]
 math: true
 toc: false
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/40/"
 ---

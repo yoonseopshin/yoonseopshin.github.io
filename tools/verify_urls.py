@@ -157,7 +157,38 @@ def main():
     for u, pages in sorted(broken.items()):
         fails.append(f"broken internal link: {u} (in {len(pages)} pages, e.g. {sorted(pages)[0]})")
 
+    # Language versions: hreflang sets must be reciprocal, include the page
+    # itself, point at real pages, and each page must keep its own canonical.
+    href_re = re.compile(r'<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"')
+    alt_sets = {}
+    for dp, _, files in os.walk(SITE):
+        for fn in files:
+            if not fn.endswith(".html"):
+                continue
+            fp = os.path.join(dp, fn)
+            head = open(fp, encoding="utf-8", errors="replace").read(20000)
+            links = href_re.findall(head)
+            if not links:
+                continue
+            page = "/" + os.path.relpath(fp, SITE).replace(os.sep, "/").replace("index.html", "")
+            alt_sets[page] = {(h, to_path(html.unescape(u))) for h, u in links}
+            c = CANON.search(head)
+            if not c or to_path(html.unescape(c.group(1))) != page:
+                fails.append(f"hreflang page without self canonical: {page}")
+    for page, alts in alt_sets.items():
+        langs = {h for h, _ in alts}
+        if not {"en", "ko", "x-default"} <= langs:
+            fails.append(f"hreflang set incomplete on {page}: {sorted(langs)}")
+        if page not in {u for _, u in alts}:
+            fails.append(f"hreflang set does not include the page itself: {page}")
+        for _, u in alts:
+            if not resolve(u):
+                fails.append(f"hreflang target missing: {page} -> {u}")
+            elif u != page and alt_sets.get(u) != alts:
+                fails.append(f"hreflang not reciprocal: {page} <-> {u}")
+
     print(f"old URLs: {len(expect)}  redirect OK: {ok_redirect}  same-path OK: {ok_same}")
+    print(f"pages with language versions: {len(alt_sets)}")
     print(f"sitemap URLs: {len(locs)}  real pages: {ok_sitemap}")
     print(f"internal links checked: {checked}  broken targets: {len(broken)}")
     for f in fails:

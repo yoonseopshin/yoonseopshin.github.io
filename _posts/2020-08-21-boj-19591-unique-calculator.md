@@ -7,7 +7,7 @@ categories: [PS]
 tags: [PS, 백준, 19591번, 덱, CPP]
 math: true
 toc: false
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/64/"
 ---

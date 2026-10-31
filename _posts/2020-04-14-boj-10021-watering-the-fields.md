@@ -7,7 +7,7 @@ categories: [PS]
 tags: [PS, 10021번, 최소 스패닝 트리, CPP]
 math: true
 toc: false
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/35/"
 ---

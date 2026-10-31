@@ -4,7 +4,7 @@ description: "Django의 애플리케이션 개발 방식"
 toc: true
 categories: [Web]
 tags: [web, django, python, Pycharm, Application, MVT]
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/web/5/"
 ---

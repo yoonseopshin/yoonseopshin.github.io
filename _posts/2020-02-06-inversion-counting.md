@@ -5,7 +5,7 @@ toc: true
 categories: [Algorithm]
 tags: [Algorithm, Inversion Counting, Merge Sort, Segment Tree, 1517번, 10090번]
 math: true
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/algorithm/13/"
 ---

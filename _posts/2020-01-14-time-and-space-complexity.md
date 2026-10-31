@@ -4,7 +4,7 @@ description: "알고리즘이 주어진 조건에 통과할 수 있는지 알아
 toc: true
 categories: [Algorithm]
 tags: [Algorithm, 알고리즘, 시간복잡도, 공간복잡도]
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/algorithm/7/"
 ---

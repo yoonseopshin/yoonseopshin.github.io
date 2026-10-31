@@ -7,7 +7,7 @@ categories: [PS]
 tags: [PS, 백준, 19598번, 스위핑, 그리디, CPP]
 math: true
 toc: false
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/69/"
 ---

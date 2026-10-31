@@ -7,7 +7,7 @@ categories: [PS]
 tags: [PS, 백준, 1528번, 다이나믹 프로그래밍, 백트래킹, CPP]
 math: true
 toc: false
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/38/"
 ---

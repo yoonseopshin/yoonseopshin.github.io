@@ -4,7 +4,7 @@ description: "2019 Overflow Programming Contest (OPC) 풀이 및 코드"
 toc: true
 categories: [PS]
 tags: [BOJ, 백준, OPC, 성대, 18221번, 18222번, 18223번, 18224번, 18225번, 18226번, 18227번]
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/3/"
 ---

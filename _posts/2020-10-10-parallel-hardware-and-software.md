@@ -7,7 +7,7 @@ categories: [Parallel programming]
 tags: [Parallel programming]
 math: true
 toc: false
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/parallel programming/73/"
 ---

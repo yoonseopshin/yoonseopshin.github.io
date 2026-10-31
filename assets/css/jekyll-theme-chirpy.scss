@@ -30,6 +30,37 @@
   margin-right: 1em;
 }
 
+/* Language switch link and the "read in Korean" banner (_includes/lang-switch.html) */
+.lang-switch {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+}
+
+.lang-banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin: 0 0 1.25rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--main-border-color, rgba(128, 128, 128, 0.35));
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+
+  &[hidden] {
+    display: none;
+  }
+
+  .lang-banner-close {
+    margin-left: auto;
+    border: 0;
+    background: none;
+    color: inherit;
+    opacity: 0.7;
+    font-size: 0.85rem;
+  }
+}
+
 .content img.align-right {
   float: right;
   margin-left: 1em;

@@ -7,7 +7,7 @@ categories: [PS]
 tags: [PS, 백준, BOJ, CPP, 트라이, 5670번]
 math: true
 toc: false
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/32/"
 ---

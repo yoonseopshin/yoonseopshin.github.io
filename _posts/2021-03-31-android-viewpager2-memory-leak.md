@@ -5,7 +5,7 @@ toc: true
 categories: [App]
 tags: [android]
 math: true
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/app/80/"
 ---

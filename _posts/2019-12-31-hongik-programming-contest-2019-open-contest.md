@@ -4,7 +4,7 @@ description: "2019 홍익대학교 프로그래밍 경진대회 Open Contest 풀
 toc: true
 categories: [PS]
 tags: [BOJ, 백준, 홍익대, 17826번, 17836번, 17827번, 17828번, 17829번, 17830번, 17831번, 17834번, 17833번]
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/2/"
 ---

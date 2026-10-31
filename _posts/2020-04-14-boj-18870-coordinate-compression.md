@@ -7,7 +7,7 @@ categories: [PS]
 tags: [PS, 백준, BOJ, CPP, 좌표 압축, 18870번]
 math: true
 toc: false
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/34/"
 ---

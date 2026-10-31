@@ -7,7 +7,7 @@ categories: [etc]
 tags: []
 math: true
 toc: false
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/etc/70/"
 ---

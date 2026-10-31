@@ -4,7 +4,7 @@ description: "단순한 탐색보다 더 빠르게 찾는 탐색 알고리즘에
 toc: true
 categories: [Algorithm]
 tags: [Algorithm, 이분탐색, Parametric Search]
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/algorithm/9/"
 ---

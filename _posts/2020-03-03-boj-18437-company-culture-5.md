@@ -7,7 +7,7 @@ categories: [PS]
 tags: [PS, 백준, BOJ, CPP, 회사 문화 5, 세그먼트 트리, Lazy Propagation, 18437번, 오일러 투어 테크닉]
 math: true
 toc: false
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/25/"
 ---

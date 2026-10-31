@@ -5,7 +5,7 @@ toc: true
 categories: [App]
 tags: [android, Unit test]
 math: true
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/app/79/"
 ---

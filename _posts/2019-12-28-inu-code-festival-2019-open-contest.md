@@ -4,7 +4,7 @@ description: "INU 송년 코드 페스티벌 풀이 및 코드"
 toc: true
 categories: [PS]
 tags: [BOJ, 백준, 인천대, 18228번, 18229번, 18230번, 18231번, 18232번, 18233번, 18234번, 18235번]
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/1/"
 ---

@@ -5,7 +5,7 @@ toc: true
 categories: [App]
 tags: [app, android, kotlin, progress bar]
 math: true
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/app/42/"
 ---

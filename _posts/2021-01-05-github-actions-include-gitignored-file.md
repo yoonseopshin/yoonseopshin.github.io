@@ -5,7 +5,7 @@ toc: true
 categories: [CI/CD]
 tags: [Github action, android]
 math: true
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ci/cd/78/"
 ---

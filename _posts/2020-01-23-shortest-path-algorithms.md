@@ -5,7 +5,7 @@ toc: true
 categories: [Algorithm]
 tags: [Algorithm, 다익스트라, 벨만 포드, 플로이드 와샬, 최단경로, 그래프]
 math: true
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/algorithm/10/"
 ---

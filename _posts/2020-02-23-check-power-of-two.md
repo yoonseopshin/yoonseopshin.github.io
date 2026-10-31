@@ -7,7 +7,7 @@ categories: [Algorithm]
 tags: [Algorithm, 2의 거듭제곱 판별법, JAVA]
 math: true
 toc: false
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/algorithm/23/"
 ---

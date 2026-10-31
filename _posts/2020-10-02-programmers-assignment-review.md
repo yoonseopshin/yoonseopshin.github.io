@@ -5,7 +5,7 @@ toc: true
 categories: [App]
 tags: [android, 프로그래머스]
 math: true
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/app/71/"
 ---

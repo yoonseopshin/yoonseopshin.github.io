@@ -5,7 +5,7 @@ toc: true
 categories: [Algorithm]
 tags: [Algorithm, 유니온파인드, Disjoint Set, 상호배타적 집합, 서로소 집합, 2501번]
 math: true
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/algorithm/12/"
 ---

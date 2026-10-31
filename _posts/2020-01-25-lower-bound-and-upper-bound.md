@@ -5,7 +5,7 @@ toc: true
 categories: [Algorithm]
 tags: [Algorithm, Lower Bound, Upper Bound, 이분탐색]
 math: true
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/algorithm/11/"
 ---

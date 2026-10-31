@@ -7,7 +7,7 @@ categories: [PS]
 tags: [PS, 백준, 17353번, 세그먼트 트리, Lazy Propagation, CPP]
 math: true
 toc: false
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/39/"
 ---

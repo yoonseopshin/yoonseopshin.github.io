@@ -5,7 +5,7 @@ toc: true
 categories: [PS]
 tags: [PS, 11427번, 수열과 쿼리 15, TreeSet, 세그먼트 트리, JAVA]
 math: true
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/ps/14/"
 ---

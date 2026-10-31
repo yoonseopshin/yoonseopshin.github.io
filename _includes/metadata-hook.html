@@ -1,2 +1,32 @@
 <!-- Let feed readers find the Atom feed from any page -->
+{% if page.lang contains 'ko' %}
+<link rel="alternate" type="application/atom+xml" title="{{ site.title }} (한국어)" href="{{ '/ko/feed.xml' | absolute_url }}">
+{% else %}
 <link rel="alternate" type="application/atom+xml" title="{{ site.title }}" href="{{ '/feed.xml' | absolute_url }}">
+{% endif %}
+
+{% comment %}
+  Language versions. Pages that are translations of each other share `ref`
+  (posts, plus the home pages / and /ko/). Every version lists all versions,
+  itself included, and English is x-default. Each page keeps its own canonical.
+{% endcomment %}
+{% comment %} /page/2/ and later copy the front page's front matter; they are not language versions. {% endcomment %}
+{% if page.ref and paginator.page == nil or page.ref and paginator.page == 1 %}
+  {% assign lang_candidates = site.posts | concat: site.pages | concat: site.tabs | where: 'ref', page.ref %}
+  {% assign lang_versions = '' | split: '' %}
+  {% for v in lang_candidates %}
+    {% unless v.url contains '/page/' %}{% assign lang_versions = lang_versions | push: v %}{% endunless %}
+  {% endfor %}
+  {% if lang_versions.size > 1 %}
+    {% for v in lang_versions %}
+      {% if v.lang contains 'ko' %}
+<link rel="alternate" hreflang="ko" href="{{ v.url | absolute_url }}">
+        {% unless page.lang contains 'ko' %}<meta property="og:locale:alternate" content="ko_KR">{% endunless %}
+      {% else %}
+<link rel="alternate" hreflang="en" href="{{ v.url | absolute_url }}">
+<link rel="alternate" hreflang="x-default" href="{{ v.url | absolute_url }}">
+        {% if page.lang contains 'ko' %}<meta property="og:locale:alternate" content="en_US">{% endif %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+{% endif %}

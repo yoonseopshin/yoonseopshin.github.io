@@ -4,7 +4,7 @@ description: "그래프를 탐색하는 기본 알고리즘인 DFS와 BFS를 알
 toc: true
 categories: [Algorithm]
 tags: [Algorithm, DFS, BFS]
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/algorithm/8/"
 ---

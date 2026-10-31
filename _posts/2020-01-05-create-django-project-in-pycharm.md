@@ -4,7 +4,7 @@ description: "Pycharm Community Edition으로 Django 프레임워크 프로젝�
 toc: true
 categories: [Web]
 tags: [web, django, python, Pycharm, Pycharm Community Edition]
-lang: ko
+lang: ko-KR
 redirect_from:
   - "/web/4/"
 ---
