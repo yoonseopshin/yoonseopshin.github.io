@@ -42,7 +42,9 @@ jobs:
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
-          # Reads .ruby-version so CI uses the same Ruby as local builds
+          # Same minor line as .ruby-version (3.3.x). Runners do not ship every
+          # patch release, so pin the minor version, not the exact patch.
+          ruby-version: "3.3"
           bundler-cache: true
 
       - name: Build site
