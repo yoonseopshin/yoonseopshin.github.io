@@ -26,7 +26,7 @@ Giving each session its own simulator had been a fix in the first place. Before 
 
 ## Options I ruled out
 
-I wrote the rejected options into a decision record, one reason each:
+I wrote down the rejected options, one reason each:
 
 | Option | Why not |
 |---|---|

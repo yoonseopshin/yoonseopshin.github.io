@@ -1,5 +1,5 @@
 ---
-title: "안드로이드 17 targetSdk와 무관하게 적용되는 동작 변경"
+title: "targetSdk 36인데도 앱에 닿은 안드로이드 17 변경 두 개"
 description: "targetSdk를 36에 두고 안드로이드 17 대응을 미뤘는데, 모든 앱에 적용되는 동작 변경 아홉 개 중 두 개가 코드 수정을 요구했다. 타겟 페이지만 읽고 all-apps 페이지를 건너뛴 탓이다."
 date: 2026-08-21 23:08:16 +0900
 categories: [Android]
@@ -12,7 +12,7 @@ permalink: /ko/posts/android-17-all-apps-changes/
 math: false
 ---
 
-7월에 앱을 안드로이드 17 기준으로 점검했는데 필수 코드 수정은 0건이었으므로, 새 동작이 아직 사용자에게 적용되지 않도록 `targetSdk`는 일부러 36에 두었다. 그런데 3주 뒤에 보니 안드로이드 17 변경 두 개는 `targetSdk` 36에서도 모든 안드로이드 17 기기에 그대로 적용되고 있었다. 하나는 회전 뒤 검색 화면의 키보드를 다시 띄워 주지 않는 변경이고, 다른 하나는 Crashlytics에 잡히지 않는 새로운 종류의 프로세스 종료다. 둘 다 내가 읽지 않은 페이지에 있었다.
+7월에 앱을 안드로이드 17 기준으로 점검해 필수 코드 수정이 0건이라는 결론을 냈고, 새 동작이 아직 사용자에게 적용되지 않도록 `targetSdk`는 일부러 36에 두었다. 그런데 3주 뒤에 보니 안드로이드 17 변경 두 개는 `targetSdk` 36에서도 모든 안드로이드 17 기기에 그대로 적용되고 있었다. 하나는 회전 뒤 검색 화면의 키보드를 다시 띄워 주지 않는 변경이고, 다른 하나는 Crashlytics에 잡히지 않는 새로운 종류의 프로세스 종료다. 둘 다 내가 읽지 않은 페이지에 있었다.
 
 ## 7월 점검의 범위
 
@@ -32,25 +32,25 @@ math: false
 
 ## targetSdk와 상관없이 적용되는 아홉 항목
 
-all-apps 페이지는 `targetSdk`와 상관없이 적용된다. 즉, 안전하다고 골라 둔 `targetSdk` 36에서도 앱은 처음부터 내가 생각한 안드로이드 16 동작 그대로가 아니었다. 이 페이지도 타겟 페이지와 같은 방식으로 훑었고, 8월 21일 기준 항목은 아홉 개였다.
+all-apps 페이지는 `targetSdk`와 상관없이 적용되니, 안전하다고 골라 둔 `targetSdk` 36은 처음부터 내가 생각한 안드로이드 16 동작이 아니었다. 이 페이지도 타겟 페이지와 같은 방식으로 훑었고, 8월 21일 기준 항목은 아홉 개였다.
 
-| 변경 (모든 앱, 안드로이드 17) | 이 앱에 해당 여부 | 확인 방법 |
+| 변경 (모든 앱, 안드로이드 17) | 이 앱에 해당하나 | 확인 방법 |
 |---|---|---|
-| 앱이 처리하지 않은 구성 변경 뒤 IME 표시 상태가 복원되지 않음 | 해당 | `windowSoftInputMode` 선언 없음, 검색 화면이 복원에 의존하고 있었음 |
-| 기기 RAM 기반 앱 메모리 한도 | 해당 | 어느 앱이든 종료될 수 있고, 그 종료는 크래시가 아님 |
-| 암묵적 URI 권한 부여 제한 | 해당 없음 | `ACTION_SEND`·`ACTION_SEND_MULTIPLE`·`ACTION_IMAGE_CAPTURE`·`FileProvider` 없음, 강제 적용은 안드로이드 18부터 |
-| 앱별 Keystore 키 개수 한도 | 해당 없음 | `KeyStore`·암호화 preferences 사용 없음 |
-| SMS OTP 보호(전달 지연, WebOTP까지 확대) | 해당 없음 | SMS 사용 없음 |
-| 프로필 간 loopback 차단 | 해당 없음 | loopback 통신 없음 |
-| pointer capture 중 터치패드 상대 이벤트 | 해당 없음 | `requestPointerCapture` 없음 |
-| 백그라운드 오디오 강화 | 해당 없음 | 오디오 API 없음 |
-| 블루투스 자동 재페어링 | 해당 없음 | 블루투스 사용 없음 |
+| 앱이 처리하지 않은 구성 변경 뒤 IME 표시 상태가 복원되지 않음 | 예 | `windowSoftInputMode` 선언 없음, 검색 화면이 복원에 의존하고 있었음 |
+| 기기 RAM 기반 앱 메모리 한도 | 예 | 어느 앱이든 종료될 수 있고, 그 종료는 크래시가 아님 |
+| 암묵적 URI 권한 부여 제한 | 아니요 | `ACTION_SEND`·`ACTION_SEND_MULTIPLE`·`ACTION_IMAGE_CAPTURE`·`FileProvider` 없음, 강제 적용은 안드로이드 18부터 |
+| 앱별 Keystore 키 개수 한도 | 아니요 | `KeyStore`·암호화 preferences 사용 없음 |
+| SMS OTP 보호(전달 지연, WebOTP까지 확대) | 아니요 | SMS 사용 없음 |
+| 프로필 간 loopback 차단 | 아니요 | loopback 통신 없음 |
+| pointer capture 중 터치패드 상대 이벤트 | 아니요 | `requestPointerCapture` 없음 |
+| 백그라운드 오디오 강화 | 아니요 | 오디오 API 없음 |
+| 블루투스 자동 재페어링 | 아니요 | 블루투스 사용 없음 |
 
 10월 31일에 다시 열어 보니 항목이 열 개로 늘어 있었다. 새로 생긴 하나는 `usesCleartextTraffic` 지원 중단 계획이고, 같은 기간에 타겟 페이지도 15개에서 17개가 됐다.
 
 ## 회전 뒤 검색 화면 키보드
 
-all-apps 페이지의 해당 문장은 다음과 같다. "Beginning with Android 17, when the device's configuration changes (for example, through rotation), and this is not handled by the app itself, the previous IME visibility is not restored." 즉, 구성 변경 뒤에도 키보드가 필요하면 앱이 직접 요청해야 한다. 방법은 `android:windowSoftInputMode="stateAlwaysVisible"`을 선언하거나 코드에서 요청하는 것이다.
+all-apps 페이지에는 이렇게 적혀 있다. "Beginning with Android 17, when the device's configuration changes (for example, through rotation), and this is not handled by the app itself, the previous IME visibility is not restored." 구성 변경 뒤에도 키보드가 필요한 앱은 `android:windowSoftInputMode="stateAlwaysVisible"`을 선언하거나 코드에서 직접 요청해야 한다.
 
 검색 화면은 진입 전환이 끝나면 입력 필드에 한 번 자동으로 포커스를 주고 키보드를 연다. 자동 포커스를 이미 했다는 사실은 `rememberSaveable` 플래그에 담았는데, 키보드를 일부러 닫은 사람에게 회전 한 번으로 키보드를 다시 띄우지 않으려고 넣은 플래그다. 안드로이드 17 이전에는 플래그가 회전 뒤에도 유지되어 화면이 의도대로 포커스를 다시 요청하지 않았고, 키보드를 열어 두었던 사람에게는 시스템이 알아서 키보드를 복원해 줬다. 하지만 안드로이드 17에서는 시스템이 이 복원을 하지 않으므로, 그대로 두면 회전할 때마다 키보드를 열어 둔 사람까지 키보드를 잃게 된다.
 
@@ -77,7 +77,7 @@ SearchField(
 )
 ```
 
-내가 틀리기 쉬웠던 줄은 `remember { hadFocus }`다. `LaunchedEffect` 블록이 실시간 `hadFocus`를 읽으면 키보드를 닫는 순간 `false`가 되고 포커스를 주면 다시 `true`가 되므로, 포커스가 바뀔 때마다 조건을 다시 따지게 된다. 진입할 때 한 번만 읽으면 이 값은 직전 구성의 상태를 나타내는 값으로 고정된다.
+내가 틀리기 쉬웠던 줄은 `remember { hadFocus }`다. `LaunchedEffect` 블록이 실시간 `hadFocus`를 읽으면 키보드를 닫는 순간 `false`가 되고 포커스를 주면 다시 `true`가 되므로, 포커스가 바뀔 때마다 조건을 다시 따지게 된다. 진입할 때 한 번만 읽으면 이 값은 직전 구성의 상태를 담은 채 바뀌지 않는다.
 
 더 간단히 고치는 방법도 두 가지 있었다. `hasAutoFocused`를 그냥 `remember`로 되돌리면 단어 하나로 끝나지만, 키보드를 닫은 사람에게 다시 열지 않는다는 원래 의도가 사라진다. 매니페스트에 `stateAlwaysVisible`을 선언하면 검색 화면뿐 아니라 앱의 모든 화면이 영향을 받는다. 플래그를 나누는 쪽은 수정이 복원에 의존하던 화면 하나 안에서 끝나므로 이 방법을 골랐다.
 
@@ -87,7 +87,7 @@ SearchField(
 
 두 번째 변경은 이 문장이다. "Android 17 introduces app memory limits based on the device's total RAM." 한도를 넘은 앱은 나중에 프로세스 종료 이력에 나타나고, 페이지도 그 이력을 확인하라고 안내한다. 이 종료는 크래시가 아니라 시스템이 프로세스를 죽이는 것이다. 앱 안에서 이를 알아챌 코드가 실행 중일 수 없으므로 Crashlytics에도 보고가 가지 않는다. 사용자 눈에는 앱이 그냥 사라지고, 다음 실행은 콜드 스타트가 된다.
 
-남는 기록은 종료 이력뿐이고, 그마저도 지나고 나서야 읽을 수 있다. 무엇을 찾아야 하는지는 페이지에 나와 있다. "the exit reason will be `REASON_OTHER` and the description will contain the string `"MemoryLimiter:AnonSwap"`." 그래서 앱이 실행될 때마다 이력을 읽고, 새로 생긴 메모리 한도 종료를 분석 이벤트로 남기게 했다. 판정 로직은 유닛 테스트를 붙일 수 있게 공통 코드에 두고, 플랫폼 API를 읽는 부분만 간단한 안드로이드 함수로 감쌌다. 코드는 다음과 같다.
+남는 기록은 종료 이력뿐이고, 그마저도 지나고 나서야 읽을 수 있다. 무엇을 찾아야 하는지는 페이지에 나와 있다. "the exit reason will be `REASON_OTHER` and the description will contain the string `"MemoryLimiter:AnonSwap"`." 그래서 앱이 실행될 때마다 이력을 읽고, 새로 생긴 메모리 한도 종료를 분석 이벤트로 남기게 했다. 판정 로직은 유닛 테스트를 붙일 수 있게 공통 코드에 두고, 플랫폼 API를 읽는 부분만 간단한 안드로이드 함수로 감쌌다.
 
 ```kotlin
 fun reportMemoryLimitKills(context: Context, prefs: SharedPreferences) {
@@ -130,8 +130,8 @@ fun reportMemoryLimitKills(context: Context, prefs: SharedPreferences) {
 
 3주 동안 다른 작업으로도 테스트가 늘었다. 리포터를 두는 비용은 이벤트 정의 하나와 실행당 바인더 호출 한 번이다.
 
-## 정리
+## 페이지마다 날짜를 붙인 점검 두 번
 
 바쁜 시기라는 전제는 내가 월별 수치를 들여다보기 전까지 열세 곳에 복사되어 있었다. '시즌이 끝나면' 같은 문장은 결정 기록에 한번 들어가면 쓴 나조차 다시 확인하지 않았다.
 
-7월 점검은 꼼꼼했고, 스스로 던진 질문인 'targetSdk를 올리면 무엇이 바뀌나'에는 제대로 답했다. 하지만 사용자가 새 OS를 설치하면 무엇이 바뀌는지는 묻지 않았다. 그 질문을 다루는 페이지는 따로 있고, 거기 실린 변경은 옵트아웃도 없이 사용자에게 먼저 적용된다. 지금은 플랫폼 마이그레이션을 페이지마다 하나씩, 읽은 날짜를 붙인 점검 두 개로 진행한다. 두 페이지 모두 출시 뒤에도 계속 바뀌었기 때문이다. all-apps 점검표는 모든 행이 '해당 없음'이어도 적어 둔다. '해당 없음' 아홉 줄이 그 페이지를 읽었다는 증거다.
+7월 점검은 꼼꼼했고, 스스로 던진 질문인 'targetSdk를 올리면 무엇이 바뀌나'에는 제대로 답했다. 하지만 사용자가 새 OS를 설치하면 무엇이 바뀌는지는 묻지 않았다. 그 질문을 다루는 페이지는 따로 있고, 거기 실린 변경은 옵트아웃도 없이 사용자에게 먼저 적용된다. 지금은 플랫폼 마이그레이션을 페이지마다 하나씩, 읽은 날짜를 붙인 점검 두 개로 진행한다. 두 페이지 모두 출시 뒤에도 계속 바뀌었기 때문이다. all-apps 점검표는 모든 행이 '아니요'여도 적어 둔다. '아니요' 아홉 줄이 그 페이지를 읽었다는 증거다.

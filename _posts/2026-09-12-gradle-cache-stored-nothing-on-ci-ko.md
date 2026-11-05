@@ -1,5 +1,5 @@
 ---
-title: "GitHub Actions Gradle 캐시가 저장되지 않는 문제"
+title: "setup-gradle v3 캐시가 전부 실패해도 초록불이던 GitHub Actions"
 description: "GitHub Actions에서 Gradle 빌드는 매번 성공했는데 캐시 목록은 비어 있었다. setup-gradle v3가 캐시 복원과 저장에 모두 실패하고도 경고만 남긴 것이 원인이어서 v5로 고정했다."
 date: 2026-09-12 13:46:53 +0900
 categories: [Build & CI]
@@ -23,7 +23,7 @@ GitHub Actions에서 도는 Kotlin Multiplatform 프로젝트에 Gradle 빌드 �
 그래서 한 커밋에서 두 가지를 바꿨다.
 
 1. 두 job을 하나로 합쳤다. test 단계에서 만든 출력을 assemble 단계가 Gradle의 `UP-TO-DATE` 검사만으로 그대로 재사용하게 하려는 것이다. 로컬에서 `clean` 뒤 합친 순서로 돌려 보니 assemble 단계 태스크 334개 중 253개가 `UP-TO-DATE`였다.
-2. `org.gradle.caching=true`를 켰다. `UP-TO-DATE` 검사는 같은 러너 안에서만 의미가 있으므로 다음 실행으로 출력을 넘기려면 캐시가 필요했다. `gradle/actions/setup-gradle`은 원래 Gradle User Home을 저장하고 복원하는데 그 안에 로컬 빌드 캐시 디렉토리(`caches/build-cache-1`)가 들어 있다. 워크플로우가 기본 브랜치에서만 돌기 때문에 액션은 캐시를 읽기 전용으로 쓰지 않고 캐시 엔트리를 저장한다. 로컬에서는 clean 빌드의 태스크 433개 중 117개를 캐시에서 가져왔다.
+2. `org.gradle.caching=true`를 켰다. `UP-TO-DATE` 검사는 같은 러너 안에서만 의미가 있으므로 다음 실행으로 출력을 넘기려면 캐시가 필요했다. `gradle/actions/setup-gradle`은 원래 Gradle User Home을 저장하고 복원하는데 그 안에 로컬 빌드 캐시 디렉터리(`caches/build-cache-1`)가 들어 있다. 워크플로우가 기본 브랜치에서만 돌기 때문에 액션은 캐시를 읽기 전용으로 쓰지 않고 캐시 엔트리를 저장한다. 로컬에서는 clean 빌드의 태스크 433개 중 117개를 캐시에서 가져왔다.
 
 다만 117/433을 CI 절감량으로 환산하지는 않았다. 노트북에는 데몬이 떠 있고 의존성도 받아져 있지만 GitHub 호스팅 러너에는 둘 다 없으므로, CI에서 얼마나 줄어드는지는 변경 뒤 첫 실행에서 재 보기로 했다.
 
@@ -31,7 +31,7 @@ GitHub Actions에서 도는 Kotlin Multiplatform 프로젝트에 Gradle 빌드 �
 
 ## 첫 실행의 Setup Gradle 로그
 
-변경 뒤 첫 실행은 성공했고, 합친 build job은 15분 25초가 걸려 시간이 실제로 어느 정도 줄었다. 그런데 `Setup Gradle` 단계와 post 단계의 로그를 열어 보니 워크플로우가 아직 `setup-gradle@v3`를 쓰고 있었고, 복원 단계에는 다음과 같은 줄이 있었다.
+변경 뒤 첫 실행은 성공했고, 합친 build job은 15분 25초가 걸려 시간이 실제로 어느 정도 줄었다. 그런데 `Setup Gradle` 단계와 post 단계의 로그를 열어 보니 워크플로우가 아직 `setup-gradle@v3`를 쓰고 있었고, 복원 단계에는 이런 줄이 찍혀 있었다.
 
 ```
 Failed to restore gradle-home-v1|Linux|build[…]: Cache service responded with 400
@@ -80,7 +80,7 @@ Cache Size: ~101 MB (106283039 B)
 Cache restored successfully
 ```
 
-build job 소요 시간은 `gh run view <id> --json jobs`에서 `completedAt`과 `startedAt`의 차이로 구했다. 결과는 다음과 같다.
+build job 소요 시간은 `gh run view <id> --json jobs`에서 `completedAt`과 `startedAt`의 차이로 구했다.
 
 | 실행 수 | 구성 | build job 소요 시간 |
 |---|---|---|
@@ -119,8 +119,8 @@ echo "Gradle home cache: $(( size / 1024 / 1024 )) MB"
 
 기준값은 각자 로그에서 정상 엔트리가 얼마나 되는지 보고 정하는 것이 좋다. 내 경우는 62MB에서 102MB 사이였다.
 
-## 정리
+## 성공 표시보다 결과물 확인이 먼저
 
-v3 실패를 첫 실행에서 잡은 것은 job 소요 시간을 보다가 마침 캐시 단계 로그를 열었기 때문이다. 지금은 변경을 넣기 전에 적용됐는지 확인할 지표부터 정해 두고, 성공 표시만 보지 않고 그 지표를 직접 확인한다. 이번 캐시 작업에서는 캐시 엔트리와 그 크기가, v5 고정에서는 라이선스 조건이 그 지표였다.
+v3 실패를 첫 실행에서 잡은 것은 job 소요 시간을 보다가 마침 캐시 단계 로그를 열었기 때문이다. 지금은 변경을 넣기 전에 효과를 보여 줄 결과물부터 적어 두고, 성공 표시 대신 그 결과물을 직접 가서 본다. 이번 캐시에서는 캐시 엔트리와 그 크기였고, v5 고정에서는 라이선스였다.
 
 Actions 사용 시간은 11일 뒤에 결국 모자랐는데 캐시와는 상관없는 이유였다. 그 이야기는 [paths-ignore 글](/ko/posts/ci-minutes-paths-ignore-blocklist/)에 따로 썼다.

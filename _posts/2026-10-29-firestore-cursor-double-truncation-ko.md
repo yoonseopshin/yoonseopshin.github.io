@@ -1,5 +1,5 @@
 ---
-title: "Firestore 커서 페이지네이션 경계 메시지 중복 문제"
+title: "Double 내림 탓에 절반이 자기 문서보다 앞을 가리킨 Firestore 페이지 커서"
 description: "Swift Date를 Firestore Timestamp로 되돌릴 때 소수부를 내리자 커서 절반이 저장값보다 앞서서 경계 메시지가 다음 페이지에 또 나왔다. 마이크로초 반올림으로 어긋남을 없앴다."
 date: 2026-10-29 19:35:15 +0900
 categories: [Kotlin Multiplatform]
@@ -18,9 +18,9 @@ math: false
 
 ## Swift 브리지를 거치는 커서 값
 
-작은 비공개 채팅 앱으로, iOS 클라이언트는 Firebase iOS SDK 11.15를 쓰고 공유 모듈은 Kotlin 2.4다. 검색과 기록 보기 화면은 전체 기록 인덱스를 읽는데, 이 인덱스는 메시지를 `createdAt` 오름차순으로 받고 시각이 같으면 문서 ID 순으로 정렬한다. 다음 페이지는 마지막으로 받은 메시지의 `[createdAt, id]`로 `startAfter`를 걸어 가져온다.
+작은 비공개 채팅 앱이고, iOS 클라이언트는 Firebase iOS SDK 11.15를 쓰고 공유 모듈은 Kotlin 2.4다. 검색과 기록 보기 화면은 전체 기록 인덱스를 읽는데, 이 인덱스는 메시지를 `createdAt` 오름차순으로 받고 시각이 같으면 문서 ID 순으로 정렬한다. 다음 페이지는 마지막으로 받은 메시지의 `[createdAt, id]`로 `startAfter`를 걸어 가져온다.
 
-예전 메시지는 Swift 클라이언트가 `setData(from:)`로 썼는데, 이 경로는 Swift `Date`를 Firestore `Timestamp`로 바꿔 저장한다. Firestore는 마이크로초까지 남기므로 옛 `createdAt`에는 초 아래 여섯 자리가 있다. 한편 iOS 화면 모델은 `createdAt`을 `Date`로 들고 있는데 `Date`는 내부적으로 초 단위 `Double`이다. 즉, 커서 값은 다음 경로를 거친다.
+예전 메시지는 Swift 클라이언트가 `setData(from:)`로 썼는데, 이 경로는 Swift `Date`를 Firestore `Timestamp`로 바꿔 저장한다. Firestore는 마이크로초까지 남기므로 옛 `createdAt`에는 초 아래 여섯 자리가 있다. 한편 iOS 화면 모델은 `createdAt`을 `Date`로 들고 있는데 `Date`는 내부적으로 초 단위 `Double`이다. 커서 값이 거치는 경로를 그려 보면 이렇다.
 
 ```text
 Firestore          공유 Kotlin           Swift 화면 모델          다음 쿼리
@@ -51,7 +51,7 @@ data class Timestamp(val epochMs: Long, val nanosOfMilli: Int) {
 }
 ```
 
-대부분의 레코드는 지금도 밀리초만 쓰므로 보조 생성자를 두어 기존 Swift 호출 코드가 그대로 컴파일되게 했다. 공유 계약 파일에는 골든 케이스 여섯 개를 넣었다. 밀리초 아래 값 보존·0이면 생략·음수 초·쓰기 두 건·JSON 왕복이다. 바꾸기 전에는 다섯 개가 실패했고 바꾼 뒤에는 여섯 개 모두 통과했다. 이걸로 코틀린 쪽은 맞았지만 커서는 여전히 틀렸다.
+대부분의 레코드는 지금도 밀리초만 쓰므로 보조 생성자를 두어 기존 Swift 호출 코드가 그대로 컴파일되게 했다. 두 플랫폼이 함께 쓰는 계약 파일에는 골든 케이스 여섯 개를 넣었다. 밀리초 아래 값 보존·0이면 생략·음수 초·쓰기 두 건·JSON 왕복이다. 바꾸기 전에는 다섯 개가 실패했고 바꾼 뒤에는 여섯 개 모두 통과했다. 이걸로 코틀린 쪽은 맞았지만 커서는 여전히 틀렸다.
 
 ## `Timestamp(date:)`의 내림
 
@@ -64,7 +64,7 @@ query.start(after: [stamp, last.id])
 
 SDK 안에서 `Timestamp(date:)`는 `timeIntervalSince1970`에 `modf`를 걸고 `fraction * 1e9`를 `int32_t`로 캐스팅하는데, 이 캐스팅이 내림이다. `Double`이 마이크로초 값을 정확히 담는다면 상관없지만 그럴 수가 없다. 1.7 × 10⁹초 근처에서 이웃한 `Double` 사이의 간격은 2⁻²²초, 약 238ns다. `dateValue()`가 만든 `Double`은 표현 가능한 가장 가까운 수이므로 절반쯤은 저장된 마이크로초보다 조금 크고 나머지는 조금 작다.
 
-크게 잡히면 내림 결과는 저장값과 같거나 그보다 약간 크지만, 작게 잡히면 내린 뒤에도 여전히 작다. 오차가 가장 클 때의 예시 값은 다음과 같다.
+크게 잡히면 내림 결과는 저장값과 같거나 그보다 약간 크지만, 작게 잡히면 내린 뒤에도 여전히 작다. 아래는 오차가 가장 클 때의 예시 값이다.
 
 ```text
 저장값           ...123456000 ns
@@ -102,7 +102,7 @@ enum CursorTime {
 
 ## 10만 개 왕복 검사 스크립트
 
-검사는 XCTest 타겟 대신 독립 Swift 스크립트로 만들어, `split`이 든 앱 소스 파일 하나와 함께 `swiftc`로 컴파일한다. 핵심 루프는 다음과 같다.
+검사는 XCTest 타겟 대신 독립 Swift 스크립트로 만들어, `split`이 든 앱 소스 파일 하나와 함께 `swiftc`로 컴파일한다. 아래는 그 핵심 루프다.
 
 ```swift
 var mismatches = 0

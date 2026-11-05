@@ -20,9 +20,9 @@ I found that mismatch and seven others after I stopped writing test expectations
 
 The app has an iOS client in Swift and a newer Android client. Shared rules live in a Kotlin Multiplatform module that the iOS app calls into, and that was the plan for everything. During the Android build-out, though, some screen rules got written fresh in Kotlin while the iPhone app kept running its own Swift version: a tapping-battle game's rules and stats, the slots on a village screen, the app-lock policy, and the markup parser for the in-app wiki.
 
-Nothing checked that the two copies agreed. The Swift side had no tests. By an earlier decision Swift doesn't run in CI and is matched to the contract files by review only. The Kotlin unit tests checked what I thought the rule was.
+Nothing checked that the two copies agreed. The Swift side had no tests. By an earlier decision Swift doesn't run in CI and is matched to the shared contract files by review only. The Kotlin unit tests checked what I thought the rule was.
 
-I wanted an Android user and an iPhone user looking at the same data to see the same result, which needs a test where one side is the reference. I picked the Swift implementation because users already had it, and wrote the rule into the design: when they differ, fix Kotlin and record the difference.
+I wanted an Android user and an iPhone user looking at the same data to see the same result, which needs a test where one side is the reference. I picked the Swift implementation because users already had it, and made it a rule: when they differ, fix Kotlin and record the difference.
 
 ## Expectations I'd transcribed by hand
 

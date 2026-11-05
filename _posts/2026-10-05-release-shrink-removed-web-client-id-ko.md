@@ -1,5 +1,5 @@
 ---
-title: "안드로이드 릴리즈 빌드 Google 로그인 실패"
+title: "리소스 축소 때문에 릴리즈에서만 211번 실패한 Google 로그인"
 description: "안드로이드 릴리즈 빌드에서만 Google 로그인이 211번 실패하고 한 번도 성공하지 못했다. getIdentifier로 이름만 넘겨 찾던 문자열을 리소스 축소가 지운 것이 원인이었다."
 date: 2026-10-05 10:47:20 +0900
 categories: [Android]
@@ -22,7 +22,7 @@ math: false
 
 당시에는 로그인을 선택 사항으로 둔 계정 기능을 막 배포한 참이었다. Apple이나 Google로 로그인하면 iOS에서 한 구매가 안드로이드에서도 풀리는 기능이다. 안드로이드의 Google 로그인은 Credential Manager를 거치는데, 이때 OAuth 웹 클라이언트 ID를 `serverClientId`로 넘겨야 한다.
 
-이 ID는 `google-services.json`에서 온다. google-services Gradle 플러그인이 이 파일을 읽어 `default_web_client_id`라는 문자열 리소스를 만든다. 이 리소스는 플러그인을 적용한 모듈에만 생기는데, 내 프로젝트에서는 앱 모듈이 그렇다. 반면 로그인 코드는 Kotlin Multiplatform 공유 라이브러리 모듈에 있다. 그래서 라이브러리 쪽에는 생성된 `R` 항목이 없고, `webClientId()`는 런타임에 이름으로 문자열을 찾는다. 찾은 ID가 0이면 바로 null을 돌려주는 코드는 다음과 같다.
+이 ID는 `google-services.json`에서 온다. google-services Gradle 플러그인이 이 파일을 읽어 `default_web_client_id`라는 문자열 리소스를 만든다. 이 리소스는 플러그인을 적용한 모듈에만 생기는데, 내 프로젝트에서는 앱 모듈이 그렇다. 반면 로그인 코드는 Kotlin Multiplatform 공유 라이브러리 모듈에 있다. 그래서 라이브러리 쪽에는 생성된 `R` 항목이 없고, `webClientId()`는 런타임에 이름으로 문자열을 찾고, 찾은 ID가 0이면 바로 null을 돌려준다.
 
 ```kotlin
 private fun webClientId(context: Context): String? {
@@ -37,7 +37,7 @@ private fun webClientId(context: Context): String? {
 val clientId = webClientId(context) ?: return Failed("no_web_client_id")
 ```
 
-에러 코드는 일부러 이렇게 정했다. Firebase 콘솔에서 Google 제공자를 켜고 `google-services.json`을 다시 받기 전까지는 이 리소스가 정말로 없기 때문이다. 즉, `no_web_client_id`는 "설정 단계를 하나 빠뜨렸다"는 뜻으로 만든 코드였다.
+에러 코드는 일부러 이렇게 정했다. Firebase 콘솔에서 Google 제공자를 켜고 `google-services.json`을 다시 받기 전까지는 이 리소스가 정말로 없기 때문이다. `no_web_client_id`는 "설정 단계를 하나 빠뜨렸다"는 뜻으로 만든 코드였다.
 
 ## 빌드 단계별 값 추적
 
@@ -60,7 +60,7 @@ val clientId = webClientId(context) ?: return Failed("no_web_client_id")
 
 리소스 축소 문서를 보면 "safe" 모드에서는 코드에 문자열 리터럴로 들어 있는 이름의 리소스를 남긴다. 그래서 이 리소스는 지워지지 않을 줄 알았는데, AGP 9.2.1과 내 구성에서는 지워졌다. 축소된 AAB에서 이 이름은 한 번도 나오지 않았다.
 
-디버그와 릴리즈에서 같은 리소스가 어떻게 되는지 그려 보면 다음과 같다. 둘이 갈리는 지점은 축소 단계가 볼 수 있는 참조가 있느냐다.
+같은 리소스가 디버그와 릴리즈에서 갈리는 지점은 축소 단계가 볼 수 있는 참조가 있느냐다.
 
 ```mermaid
 flowchart LR
@@ -71,11 +71,11 @@ flowchart LR
   Q -- tools:keep --> OK2[유지] --> OK3[로그인 성공]
 ```
 
-## 점검은 왜 통과했나
+## 릴리즈 점검과 실기기 확인을 통과한 이유
 
 버전마다 돌리는 릴리즈 점검은 diff를 기준으로 한다. 직전 배포 커밋과 HEAD 사이의 `git diff --name-only`를 읽고 보안 규칙, 스키마, 광고·페이월 진입점처럼 영역별로 티켓을 만드는 방식이다. 2.2.85 점검은 실패 0건으로 끝났는데, 빌드 도중에 사라지는 리소스는 diff에 나오지 않으므로 이 점검으로는 애초에 볼 수 없는 버그였다.
 
-출시 다음 날 실기기에서도 로그인은 잘 됐다. 디버그 빌드는 리소스를 축소하지 않으므로, 이런 버그는 실기기에 릴리즈 빌드를 깔아서 확인해야 잡힌다.
+릴리즈 기록을 보면 출시 다음 날 실기기에서도 로그인은 잘 됐다. 디버그 빌드는 리소스를 축소하지 않으므로, 이런 버그는 실기기에 릴리즈 빌드를 깔아서 확인해야 잡힌다.
 
 ## tools:keep으로 문자열 유지
 
@@ -93,7 +93,7 @@ flowchart LR
 
 ## 릴리즈 AAB에서 이름 세기
 
-소스 트리만 봐서는 결론이 나지 않으므로 릴리즈 번들을 직접 풀어 이름이 몇 번 나오는지 셌다.
+확인하려고 릴리즈 번들을 직접 풀어 이름이 몇 번 나오는지 셌다.
 
 ```bash
 unzip -q -o app/build/outputs/bundle/<flavor>Release/app-<flavor>-release.aab \
@@ -108,8 +108,8 @@ strings /tmp/aab/base/resources.pb | grep -c default_web_client_id
 
 처음에는 macOS에서 `unzip -p ... | strings | grep -c ...`로 쓰려고 했다. 그런데 내 맥에서는 macOS `strings`가 파이프로 받은 입력에 아무것도 출력하지 않았고, `grep -c`도 아무것도 찍지 않았다. 일치하는 줄이 0건인 것처럼 보이지만 실제로는 `strings`에 입력이 하나도 들어가지 않은 것이다. 파일로 먼저 풀고 경로를 넘기면 이 문제를 피할 수 있다.
 
-## 정리
+## 이름으로 찾는 리소스는 릴리즈 AAB에서 확인
 
-`no_web_client_id`는 리소스를 찾지 못한 상황을 그대로 알려 줬을 뿐인데, 나는 이 코드를 "설정 단계를 빠뜨렸다"는 뜻으로만 읽고 엉뚱한 곳부터 뒤졌다. 그래서 지금은 에러 코드 이름에 원인이 짐작되어 있어도 가설 하나로만 보고, 이번처럼 빌드 단계마다 값을 직접 확인한다.
+`no_web_client_id`는 코드가 본 상황을 그대로 알려 줬을 뿐이다. 나는 여기에 "설정 단계를 빠뜨렸다"는 원인 하나만 붙여 뒀는데, 리소스 축소는 이 리소스가 사라지는 또 다른 경로였다. 그래서 지금은 에러 코드 이름에 원인이 짐작되어 있어도 가설 하나로만 보고, 이번처럼 빌드 단계마다 값을 직접 확인한다.
 
 `getIdentifier`, 리플렉션, 네이티브 코드나 다른 모듈에서만 참조하는 리소스도 같은 위험이 있다. 디버그와 릴리즈는 바로 이런 리소스를 걷어내는 단계에서 달라지므로, 디버그 빌드로 테스트해서는 이 버그가 보이지 않는다. 이번 경우는 위의 셸 두 줄이면 충분했고, 이 검사만 돌렸어도 2.2.85는 업로드 전에 걸렸다. 지금은 업로드 전에 릴리즈 AAB의 `resources.pb`에서 이름으로 찾는 리소스부터 센다.

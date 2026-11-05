@@ -69,7 +69,7 @@ Moving the rules back into Swift wasn't on the list. Neither was redesigning the
 
 ## 24.8 to 28.4 ms, stage by stage
 
-In Task 6 I wired the full path and timed every stage in the same run, so the old and new paths shared a simulator and a thermal state. Ranges are across the three launches:
+Once I'd wired the full path, I timed every stage in the same run, so the old and new paths shared a simulator and a thermal state. Ranges are across the three launches:
 
 | Stage (500 docs, ms) | p50 | p95 |
 |---|---|---|

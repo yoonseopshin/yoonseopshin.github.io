@@ -1,5 +1,5 @@
 ---
-title: "안드로이드 WorkManager 10분 실행 제한 문제"
+title: "10분째마다 처음부터 다시 돈 WorkManager 1시간 동영상 발행"
 description: "1시간짜리 동영상을 올리던 CoroutineWorker가 10분 실행 제한에 걸려 처음부터 다시 돌기를 반복했고 발행 잠금도 풀리지 않았다. 포그라운드 서비스 전환과 재시도 상한으로 해결했다."
 date: 2026-09-23 20:58:09 +0900
 categories: [Android]
@@ -34,13 +34,13 @@ suspend fun isPublishInFlight(): Boolean = withContext(Dispatchers.IO) {
 
 ## 실행당 10분 제한과 Worker 재생성
 
-앱이 쓰던 WorkManager 2.10.2의 `ListenableWorker` Javadoc에는 다음과 같이 적혀 있다.
+앱이 쓰던 WorkManager 2.10.2의 `ListenableWorker` Javadoc에는 이렇게 적혀 있다.
 
 > A ListenableWorker is given a maximum of ten minutes to finish its execution and return a Result. After this time has expired, the worker will be signalled to stop and its ListenableFuture will be cancelled.
 
 몇 줄 위에는 시스템이 중단시켰다가 나중에 다시 시작하는 작업은 `Worker` 인스턴스를 새로 만든다고 적혀 있다. 2.10.2 소스를 보면 결과를 돌려주지 못하고 멈춘 작업은 `ENQUEUED`로 돌아가고, `runAttemptCount`는 작업이 `RUNNING`으로 바뀔 때마다 하나씩 늘어난다. 첫 실행에서는 0이다.
 
-문제는 발행이 중간부터 이어 갈 수 없는 작업이라는 점이다. 다시 돌면 인코딩도 첫 프레임부터 새로 한다. 1시간짜리 동영상은 기기 인코딩만으로 10분을 넘겼으므로 매번 비슷한 자리에서 잘렸고, 업로드는 한 번도 끝나지 않았다. 작업이 종료 상태(SUCCEEDED/FAILED)가 되지 않으니 잠금도 풀릴 수 없었다. 흐름을 그리면 다음과 같다.
+문제는 발행이 중간부터 이어 갈 수 없는 작업이라는 점이다. 다시 돌면 인코딩도 첫 프레임부터 새로 한다. 1시간짜리 동영상은 기기 인코딩만으로 10분을 넘겼으므로 매번 비슷한 자리에서 잘렸고, 업로드는 한 번도 끝나지 않았다. 작업이 종료 상태가 되지 않으니 잠금도 풀릴 수 없었다.
 
 ```mermaid
 stateDiagram-v2
@@ -57,7 +57,7 @@ stateDiagram-v2
   end note
 ```
 
-화면에서 발행하던 예전 방식에서는 이런 일이 없었다. 앱이 포그라운드에 있는 동안 돌았으므로 시스템의 실행 제한이 걸리지 않았기 때문이다. 결국 백그라운드 작업으로 옮기면서 발행에 실행 제한이 걸리게 됐는데, 나는 그걸 모르고 넘어갔다.
+화면에서 발행하던 예전 방식에서는 이런 일이 없었다. 사용자가 보는 동안 포그라운드에서 돌았고, 시스템의 실행 제한도 걸리지 않았다. 발행을 백그라운드 작업으로 옮기면서 발행 한 번에 쓸 수 있는 시간에 상한을 씌웠는데, 나는 그걸 알아채지 못했다.
 
 ## 동영상 발행만 포그라운드 서비스로 전환
 
@@ -84,7 +84,7 @@ stateDiagram-v2
 
 이 실패는 콘텐츠 거부로 인한 실패와 일부러 구분했다. 앱은 거부된 콘텐츠에는 다시 시도를 숨기고 삭제만 보여 주는데, 중단된 발행은 다시 시도할 수 있어야 하므로 일반 실패로 보여야 한다.
 
-실제 이름을 일반적인 이름으로 바꾼 `Worker`는 다음과 같다. 맨 위의 `runAttemptCount` 확인이 재시도 상한이다.
+실제 이름을 일반적인 이름으로 바꿔 `Worker` 코드를 옮긴다. 맨 위의 `runAttemptCount` 확인이 재시도 상한이다.
 
 ```kotlin
 override suspend fun doWork(): Result {
@@ -112,7 +112,7 @@ private suspend fun tryPromoteToForeground() {
 
 유닛 테스트 두 개를 같이 넣었다. 하나는 포기 처리가 요청을 그대로 담은 재시도 가능한 실패를 남기는지, 그리고 그 실패를 콘텐츠 거부로 표시하지 않는지 확인한다. 다른 하나는 "기기 동영상 있음" 판정을 확인한다. 편집을 마친 동영상을 포함해 기기 동영상에서는 참이어야 하고, 이미지와 원격 URL 동영상에서는 거짓이어야 한다.
 
-## IllegalStateException만 잡은 문제
+## IllegalStateException만 잡다가 사라진 발행
 
 처음 짠 전환 코드는 `IllegalStateException`만 잡았다. `ForegroundServiceStartNotAllowedException`이 그 하위 타입이기 때문이다. 그런데 몇 시간 뒤에 catch 범위를 넓혀야 했다.
 
@@ -122,7 +122,7 @@ private suspend fun tryPromoteToForeground() {
 
 ## 동적 기능 모듈의 린트 오탐
 
-몇 주 뒤에는 린트가 `setForeground()` 호출에 `SpecifyForegroundServiceType` 경고를 띄우기 시작했다. 이 기능은 동적 기능 모듈에 있었는데, 그 모듈의 린트는 앱 모듈 매니페스트를 병합하지 않으므로 `SystemForegroundService`에 붙은 `dataSync` 선언을 보지 못했다. 즉, 잘못된 경고였다. 그 파일 하나에만 경고를 끄고 이유를 바로 옆에 적어 뒀다. 나중에 누군가 경고를 없애려고 선언을 하나 더 넣지 않게 하려는 메모다.
+몇 주 뒤에는 린트가 `setForeground()` 호출에 `SpecifyForegroundServiceType` 경고를 띄우기 시작했다. 이 기능은 동적 기능 모듈에 있었는데, 그 모듈의 린트는 앱 모듈 매니페스트를 병합하지 않으므로 `SystemForegroundService`에 붙은 `dataSync` 선언을 보지 못했고, 경고는 오탐이었다. 그 파일 하나에만 경고를 끄고 이유를 바로 옆에 적어 뒀다. 나중에 누군가 경고를 없애려고 선언을 하나 더 넣지 않게 하려는 메모다.
 
 ```xml
 <!-- Feature-module lint does not merge the app manifest, so it cannot see the
@@ -140,17 +140,19 @@ private suspend fun tryPromoteToForeground() {
 
 ## 수정 전후 동작
 
-상황별로 코드가 어느 경로를 타는지 정리하면 다음과 같다.
+표의 각 행은 상황마다 코드가 실제로 타는 경로를 따라 정리했다.
 
 | 상황 | 전 | 후 |
 |---|---|---|
 | 기기 동영상, 인코딩+업로드가 10분 초과 | 10분에 멈추고 처음부터 무한 반복, 강제 종료·재부팅 뒤에도 잠금 유지 | 포그라운드 서비스로 돌아 10분에 멈추지 않음 |
-| 포그라운드 서비스 전환 거절 | 해당 없음 | 일반 작업으로 계속, 짧은 동영상은 시간 안에 끝남 |
+| 포그라운드 서비스 전환 거절 | — | 일반 작업으로 계속, 짧은 동영상은 시간 안에 끝남 |
 | 어떤 이유로든 반복 중단 | 상한 없음 | 세 번째 재시작에서 재시도 가능한 실패로 끝나고 잠금 해제 |
-| 전환이 예상 밖 예외를 던짐 | 해당 없음(첫 버전에선 발행이 조용히 사라짐) | 로그만 남기고 발행 계속 |
+| 전환이 예상 밖 예외를 던짐 | —(첫 버전에선 발행이 조용히 사라짐) | 로그만 남기고 발행 계속 |
 | 이미지나 원격 URL 동영상만 있음 | 일반 작업 | 일반 작업, 변화 없음 |
 
-## 정리
+'—'는 수정 전에는 포그라운드 서비스 전환 단계가 없어서 그 상황이 생길 수 없었다는 뜻이다.
+
+## 새 실행 환경의 제한부터 적어 보기
 
 10분 실행 제한은 `ListenableWorker` 클래스 설명에 적혀 있었는데, 나는 1시간짜리 동영상을 기준으로 따져 보지 않고 발행을 옮겼다. 그래서 지금은 작업을 WorkManager 같은 다른 실행 환경으로 옮기기 전에 그 환경이 거는 조건부터 적는다. 시간 제한, 재시작 방식, 재부팅 뒤에 남는 것을 적고, 하나하나를 실제로 들어올 수 있는 가장 긴 입력으로 확인한다.
 
