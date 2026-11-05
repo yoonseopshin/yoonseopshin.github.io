@@ -98,7 +98,7 @@ Rounding each side on its own changes the aspect ratio a little. For these sizes
 
 Two details took some care. Once the buffer is smaller than the view, touch handling for walking and tapping objects has to use the view's size, so the host now receives both sizes. And folding or unfolding the phone changes the view size without changing the fixed buffer size, so `surfaceChanged` doesn't fire. A layout-change listener on the `SurfaceView` recomputes the size in that case.
 
-The roughness score of the rightmost column went from 24.4 before the change to 5.3 after, inside the 4 to 6 range of interior columns.
+With this change installed as a release build on the same device, the light along the right edge of the cover screen was gone.
 
 ## 13 to 20 ms frames on a 120 Hz screen
 
